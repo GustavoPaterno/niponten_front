@@ -4,11 +4,11 @@ import AdminMenuList from "../components/AdminMenuList";
 
 export default function AdminBuild() {
   return (
-    <main className="min-h-screen bg-gray-200 flex justify-center">
-      <section className="w-[280px] min-h-screen bg-white">
+    <main className="min-h-screen bg-gray-200">
+      <section className="w-full min-h-screen bg-white">
         <AdminHeader />
 
-        <div className="px-2 py-2">
+        <div className="px-4 py-4 md:px-6 lg:px-8">
           <AdminNotice />
           <AdminMenuList />
         </div>
