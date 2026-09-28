@@ -192,8 +192,9 @@ export function DataTable<T>({
     );
 
     return (
-        <Box className="w-full overflow-hidden bg-white shadow-component rounded-xl">
-            <Box className="flex flex-col gap-3 border-b border-gray-200 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+        <Box className="flex h-125 w-full flex-col overflow-hidden rounded-xl bg-white shadow-component">
+            {/* Header */}
+            <Box className="flex shrink-0 flex-col gap-3 border-b border-gray-200 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
                 <TextField
                     size="small"
                     placeholder={searchPlaceholder}
@@ -211,7 +212,7 @@ export function DataTable<T>({
                             ),
                         },
                     }}
-                    className="w-full sm:max-w-xs rounded-xl"
+                    className="w-full rounded-xl sm:max-w-xs"
                 />
 
                 <Select
@@ -238,9 +239,10 @@ export function DataTable<T>({
                 </Select>
             </Box>
 
-            <Box className="w-full overflow-x-auto">
+            {/* Área da tabela */}
+            <Box className="min-h-0 flex-1 overflow-auto">
                 <table className="w-full min-w-[600px] border-collapse">
-                    <thead>
+                    <thead className="sticky top-0 z-10">
                         <tr className="border-b border-gray-200 bg-gray-50">
                             {columnDef.map((column) => (
                                 <th
@@ -270,7 +272,7 @@ export function DataTable<T>({
                                         columnDef.length +
                                         (actions.length > 0 ? 1 : 0)
                                     }
-                                    className="h-40 px-4 text-center"
+                                    className="h-20 px-4 text-center"
                                 >
                                     <Typography
                                         variant="body2"
@@ -298,92 +300,86 @@ export function DataTable<T>({
                                 </td>
                             </tr>
                         ) : (
-                            paginatedData.map(
-                                (row, rowIndex) => (
-                                    <tr
-                                        key={rowIndex}
-                                        className="border-b border-gray-100 transition-colors hover:bg-gray-50"
-                                    >
-                                        {columnDef.map(
-                                            (column) => {
-                                                const value =
-                                                    row[
-                                                        column.field
-                                                    ];
+                            paginatedData.map((row, rowIndex) => (
+                                <tr
+                                    key={rowIndex}
+                                    className=" border-b border-gray-100 transition-colors hover:bg-gray-50"
+                                >
+                                    {columnDef.map((column) => {
+                                        const value =
+                                            row[column.field];
 
-                                                return (
-                                                    <td
-                                                        key={String(
-                                                            column.field
-                                                        )}
-                                                        style={{
-                                                            width: column.width,
-                                                        }}
-                                                        className="px-3 py-3 text-sm text-gray-700 sm:px-4"
-                                                    >
-                                                        {column.render
-                                                            ? column.render(
-                                                                  value,
-                                                                  row
-                                                              )
-                                                            : String(
-                                                                  value ??
-                                                                      ""
-                                                              )}
-                                                    </td>
-                                                );
-                                            }
-                                        )}
-
-                                        {actions.length > 0 && (
-                                            <td className="px-3 py-3 sm:px-4">
-                                                <Box className="flex justify-end gap-1">
-                                                    {actions.map(
-                                                        (
-                                                            action,
-                                                            actionIndex
-                                                        ) => {
-                                                            const Icon =
-                                                                action.icon;
-
-                                                            return (
-                                                                <IconButton
-                                                                    key={
-                                                                        actionIndex
-                                                                    }
-                                                                    size="small"
-                                                                    title={
-                                                                        action.label
-                                                                    }
-                                                                    onClick={() =>
-                                                                        action.onClick(
-                                                                            row
-                                                                        )
-                                                                    }
-                                                                    className="hover:bg-gray-100"
-                                                                    sx={{
-                                                                        color:
-                                                                            action.color ??
-                                                                            "inherit",
-                                                                    }}
-                                                                >
-                                                                    <Icon fontSize="small" />
-                                                                </IconButton>
-                                                            );
-                                                        }
+                                        return (
+                                            <td
+                                                key={String(
+                                                    column.field
+                                                )}
+                                                style={{
+                                                    width: column.width,
+                                                }}
+                                                className="px-3 text-sm text-gray-700 sm:px-4"
+                                            >
+                                                {column.render
+                                                    ? column.render(
+                                                        value,
+                                                        row
+                                                    )
+                                                    : String(
+                                                        value ?? ""
                                                     )}
-                                                </Box>
                                             </td>
-                                        )}
-                                    </tr>
-                                )
-                            )
+                                        );
+                                    })}
+
+                                    {actions.length > 0 && (
+                                        <td className="px-3 py-3 sm:px-4">
+                                            <Box className="flex justify-end gap-1">
+                                                {actions.map(
+                                                    (
+                                                        action,
+                                                        actionIndex
+                                                    ) => {
+                                                        const Icon =
+                                                            action.icon;
+
+                                                        return (
+                                                            <IconButton
+                                                                key={
+                                                                    actionIndex
+                                                                }
+                                                                size="small"
+                                                                title={
+                                                                    action.label
+                                                                }
+                                                                onClick={() =>
+                                                                    action.onClick(
+                                                                        row
+                                                                    )
+                                                                }
+                                                                className="hover:bg-gray-100"
+                                                                sx={{
+                                                                    color:
+                                                                        action.color ??
+                                                                        "inherit",
+                                                                }}
+                                                            >
+                                                                <Icon fontSize="small" />
+                                                            </IconButton>
+                                                        );
+                                                    }
+                                                )}
+                                            </Box>
+                                        </td>
+                                    )}
+                                </tr>
+                            ))
                         )}
                     </tbody>
                 </table>
             </Box>
 
-            <Box className="flex flex-col gap-2 border-t border-gray-200 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+            {/* Footer */}
+            <Box className="flex shrink-0 flex-col gap-2 border-t border-gray-200 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
                 <Typography
                     variant="body2"
                     className="text-gray-500"
@@ -415,9 +411,7 @@ export function DataTable<T>({
 
                     <IconButton
                         size="small"
-                        disabled={
-                            currentPage === totalPages
-                        }
+                        disabled={currentPage === totalPages}
                         onClick={() =>
                             setPage((current) =>
                                 Math.min(

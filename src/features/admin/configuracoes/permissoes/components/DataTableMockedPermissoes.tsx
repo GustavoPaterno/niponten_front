@@ -8,7 +8,7 @@ import {
     DataTable,
     DataTableAction,
     DataTableColumn,
-} from "./Datatable";
+} from "../../../../../components/table/Datatable";
 import { PermissaoColumnDef } from "@/src/features/admin/configuracoes/permissoes/components/PermissoesColumnDef";
 import { Add, Delete, Visibility, WarningAmber } from "@mui/icons-material";
 
@@ -282,7 +282,7 @@ const actions: DataTableAction<Cargo>[] = [
     },
 ];
 
-export default function DatatableMocked() {
+export default function DatatableMockedPermissoes() {
     return (
         <DataTable
             getMethod={getCargos}

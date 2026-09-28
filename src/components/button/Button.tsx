@@ -45,10 +45,7 @@ export default function Button({
                 ${colors[color]}
             `}
         >
-            {Icon && 
-                <Icon sx={{ color: (iconColor ?? "#FFFFFF"), fontSize: 30 }} />
-
-            }
+            {Icon && <Icon sx={{ color: (iconColor ?? "#FFFFFF"), fontSize: 30 }} />}
 
             <span className="flex-1 truncate">{text}</span>
         </button>
