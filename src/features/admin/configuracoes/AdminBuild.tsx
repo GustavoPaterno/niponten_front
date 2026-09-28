@@ -1,6 +1,6 @@
-import AdminHeader from "../components/AdminHeader";
-import AdminNotice from "../components/AdminNotice";
-import AdminMenuList from "../components/AdminMenuList";
+import AdminHeader from "./components/AdminHeader";
+import AdminNotice from "./components/AdminNotice";
+import AdminMenuList from "./components/AdminMenuList";
 
 export default function AdminBuild() {
   return (
