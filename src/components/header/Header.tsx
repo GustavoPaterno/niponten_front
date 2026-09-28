@@ -6,7 +6,7 @@ export default function Header() {
     const userRole = "ADM" // Chumbado
     
     return (
-        <header className="h-20 w-full bg-(--primary)">
+        <header className="fixed top-0 z-50 h-20 w-full bg-(--primary)">
             <div className="flex h-full items-center">
                 <div className="flex w-16 h-full shrink-0 items-center justify-center">
                     <MenuIcon fontSize="large" />
