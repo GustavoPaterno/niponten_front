@@ -9,67 +9,81 @@ import {
     DataTableAction,
     DataTableColumn,
 } from "../../../../../components/table/Datatable";
-import { PermissaoColumnDef } from "@/src/features/admin/configuracoes/permissoes/components/PermissoesColumnDef";
-import { Add, Delete, Visibility, WarningAmber } from "@mui/icons-material";
 
 interface Ingrediente {
     id: number;
-    imagem?: string;
-    nome: string;
-    quantidade: string
-    estoque: boolean;
+    name: string;
+    description: string;
+    imageUrl: string;
+    price: number;
+    status: "ACTIVE";
 }
 
 const ingredientesMock: Ingrediente[] = [
     {
         id: 1,
-        nome: "Queijo",
-        quantidade: "2",
-        estoque: true,
+        name: "Queijo",
+        description: "Queijo mussarela fatiado",
+        imageUrl: "/images/marusan-logo.jpg",
+        price: 12.5,
+        status: "ACTIVE",
     },
     {
         id: 2,
-        nome: "Massa",
-        quantidade: "15",
-        estoque: true,
+        name: "Massa",
+        description: "Massa artesanal",
+        imageUrl: "/images/marusan-logo.jpg",
+        price: 8.9,
+        status: "ACTIVE",
     },
     {
         id: 3,
-        nome: "Chocolate",
-        quantidade: "30",
-        estoque: true,
-       
+        name: "Chocolate",
+        description: "Chocolate ao leite",
+        imageUrl: "/images/marusan-logo.jpg",
+        price: 15,
+        status: "ACTIVE",
     },
     {
         id: 4,
-        nome: "Chocolate Branco",
-        quantidade: "0",
-        estoque: false,
+        name: "Chocolate Branco",
+        description: "Chocolate branco",
+        imageUrl: "/images/marusan-logo.jpg",
+        price: 17.5,
+        status: "ACTIVE",
     },
     {
         id: 5,
-        nome: "Catupiri",
-        quantidade: "500",
-        estoque: true,
+        name: "Catupiri",
+        description: "Requeijão cremoso tipo Catupiry",
+        imageUrl: "/images/marusan-logo.jpg",
+        price: 18,
+        status: "ACTIVE",
     },
     {
         id: 6,
-        nome: "Carne Bovina",
-        quantidade: "100",
-        estoque: true,
+        name: "Carne Bovina",
+        description: "Carne bovina moída",
+        imageUrl: "/images/marusan-logo.jpg",
+        price: 29.9,
+        status: "ACTIVE",
     },
     {
         id: 7,
-        nome: "Bacon",
-        quantidade: "0",
-        estoque: false,
+        name: "Bacon",
+        description: "Bacon em cubos",
+        imageUrl: "/images/marusan-logo.jpg",
+        price: 24.9,
+        status: "ACTIVE",
     },
     {
         id: 8,
-        nome: "Queijo Muzzarela",
-        quantidade: "20",
-        estoque: true,
-    }
+        name: "Queijo Muzzarela",
+        description: "Muzzarela fatiada",
+        imageUrl: "/images/marusan-logo.jpg",
+        price: 14.9,
+        status: "ACTIVE",
+    },
 ];
 
 const getIngredientes = async (): Promise<Ingrediente[]> => {
@@ -78,55 +92,47 @@ const getIngredientes = async (): Promise<Ingrediente[]> => {
     });
 
     return ingredientesMock;
+
 };
 
 const columnDef: DataTableColumn<Ingrediente>[] = [
     {
-        field: "imagem",
+        field: "imageUrl",
         headerName: "Imagem",
         render: (value) => (
-            value !== undefined ? (
-                <Image
-                    src={String(value)}
-                    alt=""
-                    width={40}
-                    height={40}
-                    className="h-10 w-10 rounded-full object-cover"
-                />
-            ) : (
-                <Image
-                    src="/images/marusan-logo.jpg"
-                    alt=""
-                    width={40}
-                    height={40}
-                    className="h-10 w-10 rounded-full object-cover"
-                />
-            )
+            <Image
+                src={value || "/images/marusan-logo.jpg"}
+                alt=""
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-full object-cover"
+            />
         ),
     },
     {
-        field: "nome",
+        field: "name",
         type: "text",
         headerName: "Ingrediente",
     },
     {
-        field: "quantidade",
+        field: "description",
         type: "text",
-        headerName: "quantidade",
+        headerName: "Descrição",
     },
     {
-        field: "estoque",
+        field: "price",
+        type: "text",
+        headerName: "Preço",
+        render: (value) =>
+            `R$ ${value.toFixed(2).replace(".", ",")}`,
+    },
+    {
+        field: "status",
         type: "text",
         headerName: "Status",
         render: (value) => (
-            <span
-                className={
-                    value
-                        ? "font-medium text-green-600"
-                        : "font-medium text-red-400"
-                }
-            >
-                {value ? "Estoque" : "Fora"}
+            <span className="font-medium text-green-600">
+                {value === "ACTIVE" ? "Ativo" : value}
             </span>
         ),
     },
@@ -137,7 +143,10 @@ const actions: DataTableAction<Ingrediente>[] = [
         icon: EditIcon,
         label: "Editar",
         onClick: (ingrediente) => {
-            console.log("Editar ingrediente:", ingrediente);
+            console.log(
+                "Editar ingrediente:",
+                ingrediente
+            );
         },
         color: "#000000",
     },
@@ -145,7 +154,10 @@ const actions: DataTableAction<Ingrediente>[] = [
         icon: PauseIcon,
         label: "Desativar",
         onClick: (ingrediente) => {
-            console.log("Desativar ingrediente:", ingrediente);
+            console.log(
+                "Desativar ingrediente:",
+                ingrediente
+            );
         },
         color: "#000000",
     },
@@ -153,10 +165,6 @@ const actions: DataTableAction<Ingrediente>[] = [
 
 export default function DatatableMockedIngredientes() {
     return (
-        <DataTable
-            getMethod={getIngredientes}
-            columnDef={columnDef}
-            actions={actions}
-        />
+        <DataTable getMethod={getIngredientes} columnDef={columnDef} actions={actions} />
     );
 }
