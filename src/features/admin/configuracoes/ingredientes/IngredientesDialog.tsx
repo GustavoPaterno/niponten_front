@@ -60,13 +60,15 @@ export default function IngredientesDialog({
 
     const handleClose = () => {
         onClose();
-        setImagem(null);
     };
 
     return (
         <Dialog
             open={open}
-            onClose={onClose}
+            onClose={() => {
+                onClose();
+                setImagem(null);
+            }}
             fullWidth
             maxWidth="md"
             slotProps={{

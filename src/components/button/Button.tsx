@@ -12,7 +12,9 @@ interface ButtonProps {
     text: string;
     icon?: React.ElementType;
     iconColor?: string;
-    onClick?: () => void;
+    onClick: (
+        event: React.MouseEvent<HTMLButtonElement>
+    ) => void;
     color?: ButtonColor;
 }
 
