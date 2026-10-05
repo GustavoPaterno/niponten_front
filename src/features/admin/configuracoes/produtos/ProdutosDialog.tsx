@@ -375,7 +375,7 @@ export default function ProdutosDialog({
 
                             <div className="flex flex-col gap-6">
                                 <TextField
-                                    label="Nome do Ingrediente"
+                                    label="Nome do Produto"
                                     placeholder="Ex: Queijo"
                                     value={nome}
                                     onChange={(e) =>
