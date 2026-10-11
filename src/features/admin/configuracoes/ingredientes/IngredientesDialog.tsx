@@ -1,89 +1,126 @@
 "use client";
 
+import { useState } from "react";
 import {
     Dialog,
     DialogTitle,
     DialogContent,
     DialogActions,
+    MenuItem,
     TextField,
+    useMediaQuery,
 } from "@mui/material";
-import { Add, Close, Image as ImageIcon } from "@mui/icons-material";
-import Image from "next/image";
+import { Close } from "@mui/icons-material";
 
 import Button, {
     ButtonColor,
 } from "@/src/components/button/Button";
+import { parsePreco } from "@/src/lib/format";
+import type {
+    Ingrediente,
+    IngredienteInput,
+    IngredienteStatus,
+} from "@/src/services/ingredientes";
 
 interface IngredientesDialogProps {
     open: boolean;
+    /** Ingrediente sendo editado. `null` = criando um novo. */
+    ingrediente: Ingrediente | null;
     onClose: () => void;
-    onSave: () => void;
-
-    nome: string;
-    descricao: string;
-    imagem: string | null;
-    preco: string;
-    status: string;
-
-    setNome: (value: string) => void;
-    setDescricao: (value: string) => void;
-    setImagem: (value: string | null) => void;
-    setPreco: (value: string) => void;
-    setStatus: (value: string) => void;
-
+    /** Devolve true quando salvou (o dialog é fechado por quem chama). */
+    onSave: (input: IngredienteInput) => Promise<boolean>;
 }
 
 export default function IngredientesDialog({
     open,
+    ingrediente,
     onClose,
     onSave,
-    nome,
-    descricao,
-    imagem,
-    preco,
-    setNome,
-    setDescricao,
-    setImagem,
-    setPreco,
 }: IngredientesDialogProps) {
-    const handleImagem = (
-        event: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        const file = event.target.files?.[0];
-
-        if (!file) return;
-
-        const imageUrl = URL.createObjectURL(file);
-
-        setImagem(imageUrl);
-    };
-
-    const handleClose = () => {
-        onClose();
-    };
+    const fullScreen = useMediaQuery("(max-width:639px)");
 
     return (
         <Dialog
             open={open}
-            onClose={() => {
-                onClose();
-                setImagem(null);
-            }}
+            onClose={onClose}
             fullWidth
-            maxWidth="md"
+            maxWidth="sm"
+            fullScreen={fullScreen}
             slotProps={{
                 paper: {
                     sx: {
-                        borderRadius: "12px",
+                        borderRadius: fullScreen ? 0 : "12px",
                         overflow: "hidden",
                     },
                 },
             }}
         >
+            {/* O formulário só existe enquanto o dialog está aberto: o estado reinicia a cada abertura. */}
+            <IngredientesForm
+                ingrediente={ingrediente}
+                onClose={onClose}
+                onSave={onSave}
+            />
+        </Dialog>
+    );
+}
+
+interface IngredientesFormProps {
+    ingrediente: Ingrediente | null;
+    onClose: () => void;
+    onSave: (input: IngredienteInput) => Promise<boolean>;
+}
+
+function IngredientesForm({
+    ingrediente,
+    onClose,
+    onSave,
+}: IngredientesFormProps) {
+    const editando = ingrediente !== null;
+
+    const [nome, setNome] = useState(ingrediente?.name ?? "");
+    const [descricao, setDescricao] = useState(ingrediente?.description ?? "");
+    const [preco, setPreco] = useState(
+        ingrediente ? String(ingrediente.price) : ""
+    );
+    const [status, setStatus] = useState<IngredienteStatus>(
+        ingrediente?.status ?? "ACTIVE"
+    );
+    const [tentouSalvar, setTentouSalvar] = useState(false);
+    const [salvando, setSalvando] = useState(false);
+
+    const precoNumero = parsePreco(preco);
+    const nomeInvalido = nome.trim() === "";
+    const precoInvalido =
+        preco.trim() === "" || Number.isNaN(precoNumero) || precoNumero < 0;
+
+    const handleSalvar = async () => {
+        setTentouSalvar(true);
+
+        if (nomeInvalido || precoInvalido) {
+            return;
+        }
+
+        setSalvando(true);
+
+        const salvou = await onSave({
+            name: nome,
+            description: descricao,
+            price: precoNumero,
+            status,
+        });
+
+        if (!salvou) {
+            setSalvando(false);
+        }
+    };
+
+    return (
+        <>
             {/* Header */}
             <DialogTitle
                 sx={{
-                    px: 4,
+                    px: { xs: 2, sm: 4 },
                     pt: 3,
                     pb: 2,
                     borderBottom: "1px solid #eeeeee",
@@ -91,20 +128,22 @@ export default function IngredientesDialog({
             >
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-semibold text-[#1f2937]">
-                            Criar Ingrediente
+                        <h2 className="text-xl font-semibold text-[#1f2937] sm:text-2xl">
+                            {editando ? "Editar Ingrediente" : "Criar Ingrediente"}
                         </h2>
 
                         <p className="mt-1 text-sm text-gray-500">
-                            Preencha as informações abaixo para cadastrar um
-                            novo ingrediente.
+                            {editando
+                                ? "Altere as informações do ingrediente."
+                                : "Preencha as informações abaixo para cadastrar um novo ingrediente."}
                         </p>
                     </div>
 
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
+                        disabled={salvando}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
                     >
                         <Close fontSize="small" />
                     </button>
@@ -112,92 +151,33 @@ export default function IngredientesDialog({
             </DialogTitle>
 
             {/* Content */}
-            <DialogContent
-                sx={{
-                    px: 4,
-                    py: 3,
-                }}
-            >
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-[340px_1fr] pt-5">
-                    <div>   
-                        <label
-                            htmlFor="ingrediente-image"
-                            className="flex h-[230px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-md border border-dashed border-gray-300 bg-gray-50 transition hover:border-gray-400 hover:bg-gray-100"
-                        >
-                            {imagem ? (
-                                <Image
-                                    src={imagem}
-                                    alt="Imagem do ingrediente"
-                                    width={300}
-                                    height={220}
-                                    unoptimized
-                                    className="h-full w-full object-contain p-3"
-                                />
-                            ) : (
-                                <div className="flex flex-col items-center justify-center gap-2 text-center">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-                                        <ImageIcon
-                                            sx={{
-                                                color: "#9ca3af",
-                                                fontSize: 28,
-                                            }}
-                                        />
-                                    </div>
+            <DialogContent sx={{ px: { xs: 2, sm: 4 }, py: 3 }}>
+                <div className="flex flex-col gap-6 pt-5">
+                    <TextField
+                        label="Nome do Ingrediente"
+                        placeholder="Ex: Queijo"
+                        value={nome}
+                        onChange={(e) => setNome(e.target.value)}
+                        fullWidth
+                        required
+                        error={tentouSalvar && nomeInvalido}
+                        helperText={
+                            tentouSalvar && nomeInvalido
+                                ? "Informe o nome do ingrediente."
+                                : undefined
+                        }
+                    />
 
-                                    <span className="text-sm font-medium text-gray-600">
-                                        Clique para adicionar uma foto
-                                    </span>
+                    <TextField
+                        label="Descrição"
+                        placeholder="Ex: Queijo mussarela fatiado"
+                        value={descricao}
+                        onChange={(e) => setDescricao(e.target.value)}
+                        fullWidth
+                        multiline
+                        minRows={3}
+                    />
 
-                                    <span className="text-xs text-gray-400">
-                                        JPG, PNG ou WEBP
-                                    </span>
-                                </div>
-                            )}
-                        </label>
-
-                        <p className="mt-2 text-xs text-gray-400">
-                            Tamanho máximo: 5MB
-                        </p>
-
-                        <input
-                            id="ingrediente-image"
-                            type="file"
-                            accept="image/*"
-                            capture="environment"
-                            className="hidden"
-                            onChange={handleImagem}
-                        />
-                    </div>
-
-                    
-                    <div className="flex flex-col gap-6">
-                        <TextField
-                            label="Nome do Ingrediente"
-                            placeholder="Ex: Queijo"
-                            value={nome}
-                            onChange={(e) =>
-                                setNome(e.target.value)
-                            }
-                            fullWidth
-                            required
-                        />
-
-                        <TextField
-                            label="Descrição"
-                            placeholder="Ex: Queijo mussarela fatiado"
-                            value={descricao}
-                            onChange={(e) =>
-                                setDescricao(e.target.value)
-                            }
-                            fullWidth
-                            multiline
-                            minRows={5}
-                            required
-                        />
-                    </div>
-                </div>
-
-                <div className="mt-6">
                     <TextField
                         label="Preço (adicional de produtos)"
                         type="number"
@@ -206,6 +186,12 @@ export default function IngredientesDialog({
                         onChange={(e) => setPreco(e.target.value)}
                         fullWidth
                         required
+                        error={tentouSalvar && precoInvalido}
+                        helperText={
+                            tentouSalvar && precoInvalido
+                                ? "Informe um preço igual ou maior que zero."
+                                : undefined
+                        }
                         slotProps={{
                             htmlInput: {
                                 min: 0,
@@ -220,13 +206,26 @@ export default function IngredientesDialog({
                             },
                         }}
                     />
+
+                    <TextField
+                        select
+                        label="Disponibilidade"
+                        value={status}
+                        onChange={(e) =>
+                            setStatus(e.target.value as IngredienteStatus)
+                        }
+                        fullWidth
+                    >
+                        <MenuItem value="ACTIVE">Disponível</MenuItem>
+                        <MenuItem value="OUT_OF_STOCK">Esgotado</MenuItem>
+                    </TextField>
                 </div>
             </DialogContent>
 
             {/* Footer */}
             <DialogActions
                 sx={{
-                    px: 4,
+                    px: { xs: 2, sm: 4 },
                     py: 2.5,
                     borderTop: "1px solid #eeeeee",
                     gap: 1.5,
@@ -234,16 +233,22 @@ export default function IngredientesDialog({
             >
                 <Button
                     text="Cancelar"
-                    onClick={handleClose}
+                    onClick={salvando ? () => undefined : onClose}
                     color={ButtonColor.Secondary}
                 />
 
                 <Button
-                    text="Criar Ingrediente"
+                    text={
+                        salvando
+                            ? "Salvando..."
+                            : editando
+                              ? "Salvar alterações"
+                              : "Criar Ingrediente"
+                    }
                     color={ButtonColor.Green}
-                    onClick={onSave}
+                    onClick={salvando ? () => undefined : handleSalvar}
                 />
             </DialogActions>
-        </Dialog>
+        </>
     );
 }

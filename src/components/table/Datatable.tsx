@@ -2,8 +2,11 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 
+import { mensagemDeErro } from "@/src/lib/http";
+
 import {
     Box,
+    Button as MuiButton,
     IconButton,
     MenuItem,
     Select,
@@ -35,6 +38,9 @@ export interface DataTableAction<T> {
     label: string;
     onClick: (row: T) => void;
     color?: string;
+
+    /** Esconde a ação em linhas específicas (ex.: "Reativar" só para itens inativos). */
+    hidden?: (row: T) => boolean;
 }
 
 export interface DataTableProps<T> {
@@ -45,6 +51,12 @@ export interface DataTableProps<T> {
     pageSize?: number;
     searchPlaceholder?: string;
     emptyMessage?: string;
+
+    /** Mude este valor para forçar o recarregamento dos dados (ex.: após salvar). */
+    reloadKey?: number;
+
+    /** No celular, mostra cada linha como um card em vez de uma tabela com rolagem. */
+    mobileCards?: boolean;
 }
 
 export function DataTable<T>({
@@ -54,9 +66,13 @@ export function DataTable<T>({
     pageSize = 10,
     searchPlaceholder = "Pesquisar...",
     emptyMessage = "Nenhum registro encontrado.",
+    reloadKey = 0,
+    mobileCards = false,
 }: DataTableProps<T>) {
     const [data, setData] = useState<T[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [retryKey, setRetryKey] = useState(0);
 
     const [search, setSearch] = useState("");
     const [sortField, setSortField] = useState<keyof T | "">("");
@@ -67,20 +83,36 @@ export function DataTable<T>({
     const [page, setPage] = useState(1);
 
     useEffect(() => {
+        let cancelled = false;
+
         const loadData = async () => {
             try {
                 setLoading(true);
+                setError(null);
 
                 const result = await getMethod();
 
-                setData(result);
+                if (!cancelled) {
+                    setData(result);
+                }
+            } catch (err) {
+                if (!cancelled) {
+                    setData([]);
+                    setError(mensagemDeErro(err));
+                }
             } finally {
-                setLoading(false);
+                if (!cancelled) {
+                    setLoading(false);
+                }
             }
         };
 
         loadData();
-    }, [getMethod]);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [getMethod, reloadKey, retryKey]);
 
     const filteredData = useMemo(() => {
         if (!search.trim()) {
@@ -191,6 +223,41 @@ export function DataTable<T>({
         sortedData.length
     );
 
+    const errorBlock = error ? (
+        <div className="flex flex-col items-center gap-2 py-6">
+            <Typography variant="body2" className="text-red-600">
+                {error}
+            </Typography>
+
+            <MuiButton
+                size="small"
+                onClick={() => setRetryKey((current) => current + 1)}
+            >
+                Tentar novamente
+            </MuiButton>
+        </div>
+    ) : null;
+
+    const renderActions = (row: T) =>
+        actions
+            .filter((action) => !action.hidden?.(row))
+            .map((action, actionIndex) => {
+            const Icon = action.icon;
+
+            return (
+                <IconButton
+                    key={actionIndex}
+                    size="small"
+                    title={action.label}
+                    onClick={() => action.onClick(row)}
+                    className="hover:bg-gray-100"
+                    sx={{ color: action.color ?? "inherit" }}
+                >
+                    <Icon fontSize="small" />
+                </IconButton>
+            );
+        });
+
     return (
         <Box className="flex h-125 w-full flex-col overflow-hidden rounded-xl bg-white shadow-component">
             {/* Header */}
@@ -241,7 +308,69 @@ export function DataTable<T>({
 
             {/* Área da tabela */}
             <Box className="min-h-0 flex-1 overflow-auto">
-                <table className="w-full min-w-[600px] border-collapse">
+                {mobileCards && (
+                    <div className="flex flex-col gap-3 p-3 sm:hidden">
+                        {loading ? (
+                            <Typography
+                                variant="body2"
+                                className="py-6 text-center text-gray-500"
+                            >
+                                Carregando...
+                            </Typography>
+                        ) : error ? (
+                            errorBlock
+                        ) : paginatedData.length === 0 ? (
+                            <Typography
+                                variant="body2"
+                                className="py-6 text-center text-gray-500"
+                            >
+                                {emptyMessage}
+                            </Typography>
+                        ) : (
+                            paginatedData.map((row, rowIndex) => (
+                                <div
+                                    key={rowIndex}
+                                    className="rounded-lg border border-gray-200 p-3"
+                                >
+                                    <dl className="flex flex-col gap-2">
+                                        {columnDef.map((column) => {
+                                            const value = row[column.field];
+
+                                            return (
+                                                <div
+                                                    key={String(column.field)}
+                                                    className="flex items-center justify-between gap-3 text-sm"
+                                                >
+                                                    <dt className="shrink-0 text-gray-500">
+                                                        {column.headerName}
+                                                    </dt>
+
+                                                    <dd className="min-w-0 wrap-break-word text-right text-gray-800">
+                                                        {column.render
+                                                            ? column.render(value, row)
+                                                            : String(value ?? "")}
+                                                    </dd>
+                                                </div>
+                                            );
+                                        })}
+                                    </dl>
+
+                                    {actions.length > 0 && (
+                                        <div className="mt-3 flex justify-end gap-1 border-t border-gray-100 pt-2">
+                                            {renderActions(row)}
+                                        </div>
+                                    )}
+                                </div>
+                            ))
+                        )}
+                    </div>
+                )}
+
+                <table
+                    className={`w-full min-w-[600px] border-collapse ${
+                        mobileCards ? "hidden sm:table" : ""
+                    }`}
+                >
                     <thead className="sticky top-0 z-10">
                         <tr className="border-b border-gray-200 bg-gray-50">
                             {columnDef.map((column) => (
@@ -280,6 +409,18 @@ export function DataTable<T>({
                                     >
                                         Carregando...
                                     </Typography>
+                                </td>
+                            </tr>
+                        ) : error ? (
+                            <tr>
+                                <td
+                                    colSpan={
+                                        columnDef.length +
+                                        (actions.length > 0 ? 1 : 0)
+                                    }
+                                    className="px-4 text-center"
+                                >
+                                    {errorBlock}
                                 </td>
                             </tr>
                         ) : paginatedData.length === 0 ? (
@@ -334,40 +475,7 @@ export function DataTable<T>({
                                     {actions.length > 0 && (
                                         <td className="px-3 py-3 sm:px-4">
                                             <Box className="flex justify-end gap-1">
-                                                {actions.map(
-                                                    (
-                                                        action,
-                                                        actionIndex
-                                                    ) => {
-                                                        const Icon =
-                                                            action.icon;
-
-                                                        return (
-                                                            <IconButton
-                                                                key={
-                                                                    actionIndex
-                                                                }
-                                                                size="small"
-                                                                title={
-                                                                    action.label
-                                                                }
-                                                                onClick={() =>
-                                                                    action.onClick(
-                                                                        row
-                                                                    )
-                                                                }
-                                                                className="hover:bg-gray-100"
-                                                                sx={{
-                                                                    color:
-                                                                        action.color ??
-                                                                        "inherit",
-                                                                }}
-                                                            >
-                                                                <Icon fontSize="small" />
-                                                            </IconButton>
-                                                        );
-                                                    }
-                                                )}
+                                                {renderActions(row)}
                                             </Box>
                                         </td>
                                     )}

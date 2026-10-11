@@ -1,5 +1,6 @@
 import "./globals.css";
 import Header from "@/src/components/header/Header";
+import { ToastProvider } from "@/src/components/feedback/ToastProvider";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 
 export default function RootLayout({
@@ -14,7 +15,7 @@ export default function RootLayout({
                     <Header />
 
                     <main className="flex-1 min-h-0 mt-20 p-2 sm:p-4 bg-[#FFF]">
-                        {children}
+                        <ToastProvider>{children}</ToastProvider>
                     </main>
                 </AppRouterCacheProvider>
             </body>
