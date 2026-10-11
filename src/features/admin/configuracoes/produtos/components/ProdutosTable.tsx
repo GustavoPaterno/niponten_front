@@ -31,7 +31,7 @@ const columnDef: DataTableColumn<Produto>[] = [
     {
         field: "name",
         type: "text",
-        headerName: "Pastel",
+        headerName: "Produto",
     },
     {
         field: "description",
