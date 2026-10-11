@@ -111,7 +111,6 @@ export default function ProdutosTable({
             columnDef={columnDef}
             actions={actions}
             reloadKey={reloadKey}
-            mobileCards
             searchPlaceholder="Pesquisar produtos..."
             emptyMessage="Nenhum produto cadastrado."
         />

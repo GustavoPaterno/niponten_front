@@ -102,7 +102,6 @@ export default function IngredientesTable({
             columnDef={columnDef}
             actions={actions}
             reloadKey={reloadKey}
-            mobileCards
             searchPlaceholder="Pesquisar ingredientes..."
             emptyMessage="Nenhum ingrediente cadastrado."
         />

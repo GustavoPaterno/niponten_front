@@ -117,7 +117,6 @@ export default function CombosTable({
             columnDef={columnDef}
             actions={actions}
             reloadKey={reloadKey}
-            mobileCards
             searchPlaceholder="Pesquisar combos..."
             emptyMessage="Nenhum combo cadastrado."
         />

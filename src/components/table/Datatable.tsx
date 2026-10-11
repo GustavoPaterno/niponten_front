@@ -54,9 +54,18 @@ export interface DataTableProps<T> {
 
     /** Mude este valor para forçar o recarregamento dos dados (ex.: após salvar). */
     reloadKey?: number;
+}
 
-    /** No celular, mostra cada linha como um card em vez de uma tabela com rolagem. */
-    mobileCards?: boolean;
+/** Mantém o conteúdo da célula em uma única linha; textos longos viram "..." e mostram o texto inteiro ao passar o mouse. */
+function CellContent({ content }: { content: React.ReactNode }) {
+    return (
+        <div
+            className="max-w-64 truncate"
+            title={typeof content === "string" ? content : undefined}
+        >
+            {content}
+        </div>
+    );
 }
 
 export function DataTable<T>({
@@ -67,7 +76,6 @@ export function DataTable<T>({
     searchPlaceholder = "Pesquisar...",
     emptyMessage = "Nenhum registro encontrado.",
     reloadKey = 0,
-    mobileCards = false,
 }: DataTableProps<T>) {
     const [data, setData] = useState<T[]>([]);
     const [loading, setLoading] = useState(true);
@@ -311,69 +319,7 @@ export function DataTable<T>({
 
             {/* Área da tabela */}
             <Box className="min-h-0 flex-1 overflow-auto">
-                {mobileCards && (
-                    <div className="flex flex-col gap-3 p-3 sm:hidden">
-                        {loading ? (
-                            <Typography
-                                variant="body2"
-                                className="py-6 text-center text-gray-500"
-                            >
-                                Carregando...
-                            </Typography>
-                        ) : error ? (
-                            errorBlock
-                        ) : paginatedData.length === 0 ? (
-                            <Typography
-                                variant="body2"
-                                className="py-6 text-center text-gray-500"
-                            >
-                                {emptyMessage}
-                            </Typography>
-                        ) : (
-                            paginatedData.map((row, rowIndex) => (
-                                <div
-                                    key={rowIndex}
-                                    className="rounded-lg border border-gray-200 p-3"
-                                >
-                                    <dl className="flex flex-col gap-2">
-                                        {columnDef.map((column) => {
-                                            const value = row[column.field];
-
-                                            return (
-                                                <div
-                                                    key={String(column.field)}
-                                                    className="flex items-center justify-between gap-3 text-sm"
-                                                >
-                                                    <dt className="shrink-0 text-gray-500">
-                                                        {column.headerName}
-                                                    </dt>
-
-                                                    <dd className="min-w-0 wrap-break-word text-right text-gray-800">
-                                                        {column.render
-                                                            ? column.render(value, row)
-                                                            : String(value ?? "")}
-                                                    </dd>
-                                                </div>
-                                            );
-                                        })}
-                                    </dl>
-
-                                    {actions.length > 0 && (
-                                        <div className="mt-3 flex justify-end gap-1 border-t border-gray-100 pt-2">
-                                            {renderActions(row)}
-                                        </div>
-                                    )}
-                                </div>
-                            ))
-                        )}
-                    </div>
-                )}
-
-                <table
-                    className={`w-full min-w-[600px] border-collapse ${
-                        mobileCards ? "hidden sm:table" : ""
-                    }`}
-                >
+                <table className="w-full min-w-[720px] border-collapse">
                     <thead className="sticky top-0 z-10">
                         <tr className="border-b border-gray-200 bg-gray-50">
                             {columnDef.map((column) => (
@@ -382,14 +328,14 @@ export function DataTable<T>({
                                     style={{
                                         width: column.width,
                                     }}
-                                    className="px-3 py-3 text-left text-xs font-semibold text-gray-500 sm:px-4"
+                                    className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold text-gray-500 sm:px-4"
                                 >
                                     {column.headerName}
                                 </th>
                             ))}
 
                             {actions.length > 0 && (
-                                <th className="w-24 px-3 py-3 text-right text-xs font-semibold text-gray-500 sm:px-4">
+                                <th className="w-24 whitespace-nowrap px-3 py-3 text-right text-xs font-semibold text-gray-500 sm:px-4">
                                     Ações
                                 </th>
                             )}
@@ -461,16 +407,20 @@ export function DataTable<T>({
                                                 style={{
                                                     width: column.width,
                                                 }}
-                                                className="px-3 text-sm text-gray-700 sm:px-4"
+                                                className="whitespace-nowrap px-3 py-2 text-sm text-gray-700 sm:px-4"
                                             >
-                                                {column.render
-                                                    ? column.render(
-                                                        value,
-                                                        row
-                                                    )
-                                                    : String(
-                                                        value ?? ""
-                                                    )}
+                                                <CellContent
+                                                    content={
+                                                        column.render
+                                                            ? column.render(
+                                                                value,
+                                                                row
+                                                            )
+                                                            : String(
+                                                                value ?? ""
+                                                            )
+                                                    }
+                                                />
                                             </td>
                                         );
                                     })}
