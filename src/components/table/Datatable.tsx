@@ -187,13 +187,16 @@ export function DataTable<T>({
         pageSize,
     ]);
 
-    useEffect(() => {
+    const handleSearchChange = (value: string) => {
+        setSearch(value);
         setPage(1);
-    }, [search, sortField, sortDirection]);
+    };
 
     const handleSortChange = (
         value: string
     ) => {
+        setPage(1);
+
         if (!value) {
             setSortField("");
             return;
@@ -267,7 +270,7 @@ export function DataTable<T>({
                     placeholder={searchPlaceholder}
                     value={search}
                     onChange={(event) =>
-                        setSearch(event.target.value)
+                        handleSearchChange(event.target.value)
                     }
                     slotProps={{
                         input: {
