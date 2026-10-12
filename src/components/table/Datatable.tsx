@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 
+import TruncatedText from "@/src/components/text/TruncatedText";
 import { mensagemDeErro } from "@/src/lib/http";
 
 import {
@@ -54,18 +55,6 @@ export interface DataTableProps<T> {
 
     /** Mude este valor para forçar o recarregamento dos dados (ex.: após salvar). */
     reloadKey?: number;
-}
-
-/** Mantém o conteúdo da célula em uma única linha; textos longos viram "..." e mostram o texto inteiro ao passar o mouse. */
-function CellContent({ content }: { content: React.ReactNode }) {
-    return (
-        <div
-            className="max-w-64 truncate"
-            title={typeof content === "string" ? content : undefined}
-        >
-            {content}
-        </div>
-    );
 }
 
 export function DataTable<T>({
@@ -409,8 +398,8 @@ export function DataTable<T>({
                                                 }}
                                                 className="whitespace-nowrap px-3 py-2 text-sm text-gray-700 sm:px-4"
                                             >
-                                                <CellContent
-                                                    content={
+                                                <TruncatedText maxWidth="16rem">
+                                                    {
                                                         column.render
                                                             ? column.render(
                                                                 value,
@@ -420,7 +409,7 @@ export function DataTable<T>({
                                                                 value ?? ""
                                                             )
                                                     }
-                                                />
+                                                </TruncatedText>
                                             </td>
                                         );
                                     })}

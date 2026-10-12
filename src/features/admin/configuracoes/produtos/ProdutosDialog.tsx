@@ -16,6 +16,7 @@ import {
     useMediaQuery,
 } from "@mui/material";
 import LimitedTextField from "@/src/components/input/LimitedTextField";
+import TruncatedText from "@/src/components/text/TruncatedText";
 import { Add, Close, Delete } from "@mui/icons-material";
 
 import Button, { ButtonColor } from "@/src/components/button/Button";
@@ -393,9 +394,9 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                                         </div>
 
                                         <div className="flex min-w-0 flex-row items-center justify-between gap-3">
-                                            <span className="truncate text-sm text-gray-700">
-                                                {ingrediente.name}
-                                            </span>
+                                            <TruncatedText maxWidth={280} className="text-sm text-gray-700">
+{ingrediente.name}
+</TruncatedText>
 
                                             {ingrediente.status !== "ACTIVE" && (
                                                 <Chip
@@ -438,9 +439,9 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                                                 />
 
                                                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                                    <span className="truncate text-sm font-medium text-gray-800">
-                                                        {ingrediente.name}
-                                                    </span>
+                                                    <TruncatedText className="text-sm font-medium text-gray-800">
+{ingrediente.name}
+</TruncatedText>
 
                                                     <Chip
                                                         label={
@@ -616,7 +617,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                                                                 key={t.id}
                                                                 value={t.id}
                                                             >
-                                                                {t.name}
+                                                                <TruncatedText maxWidth={320}>{t.name}</TruncatedText>
                                                             </MenuItem>
                                                         ))}
                                                     </TextField>

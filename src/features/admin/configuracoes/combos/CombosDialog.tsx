@@ -16,6 +16,7 @@ import {
     useMediaQuery,
 } from "@mui/material";
 import LimitedTextField from "@/src/components/input/LimitedTextField";
+import TruncatedText from "@/src/components/text/TruncatedText";
 import { Close, Delete } from "@mui/icons-material";
 
 import Button, { ButtonColor } from "@/src/components/button/Button";
@@ -390,9 +391,9 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
 
                                     <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
                                         <div className="flex min-w-0 flex-col">
-                                            <span className="truncate text-sm text-gray-700">
-                                                {produto.name}
-                                            </span>
+                                            <TruncatedText maxWidth={280} className="text-sm text-gray-700">
+{produto.name}
+</TruncatedText>
 
                                             <span className="text-xs text-gray-400">
                                                 a partir de{" "}
@@ -441,9 +442,9 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                                         <Thumb src={produto.imageUrl} />
 
                                         <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                            <span className="truncate text-sm font-medium text-gray-800">
-                                                {produto.name}
-                                            </span>
+                                            <TruncatedText className="text-sm font-medium text-gray-800">
+{produto.name}
+</TruncatedText>
 
                                             <span className="text-xs text-gray-500">
                                                 a partir de{" "}
