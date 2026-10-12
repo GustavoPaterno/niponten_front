@@ -10,6 +10,7 @@ import {
     TextField,
     useMediaQuery,
 } from "@mui/material";
+import LimitedTextField from "@/src/components/input/LimitedTextField";
 import { Close } from "@mui/icons-material";
 
 import Button, {
@@ -153,7 +154,7 @@ function IngredientesForm({
             {/* Content */}
             <DialogContent sx={{ px: { xs: 2, sm: 4 }, py: 3 }}>
                 <div className="flex flex-col gap-6 pt-5">
-                    <TextField
+                    <LimitedTextField
                         label="Nome do Ingrediente"
                         placeholder="Ex: Queijo"
                         value={nome}
@@ -168,7 +169,7 @@ function IngredientesForm({
                         }
                     />
 
-                    <TextField
+                    <LimitedTextField
                         label="Descrição"
                         placeholder="Ex: Queijo mussarela fatiado"
                         value={descricao}

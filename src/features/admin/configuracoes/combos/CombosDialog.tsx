@@ -15,6 +15,7 @@ import {
     TextField,
     useMediaQuery,
 } from "@mui/material";
+import LimitedTextField from "@/src/components/input/LimitedTextField";
 import { Close, Delete } from "@mui/icons-material";
 
 import Button, { ButtonColor } from "@/src/components/button/Button";
@@ -227,7 +228,7 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
 
                         <div className="flex flex-col gap-6 pt-3">
                             <div className="flex flex-col gap-6 sm:flex-row">
-                                <TextField
+                                <LimitedTextField
                                     label="Nome do Combo"
                                     placeholder="Ex: Combo Família"
                                     value={nome}
@@ -272,7 +273,7 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                                 />
                             </div>
 
-                            <TextField
+                            <LimitedTextField
                                 label="Descrição"
                                 placeholder="Ex: Combo com 3 pastéis para toda a família"
                                 value={descricao}

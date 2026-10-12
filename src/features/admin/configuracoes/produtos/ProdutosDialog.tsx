@@ -15,6 +15,7 @@ import {
     TextField,
     useMediaQuery,
 } from "@mui/material";
+import LimitedTextField from "@/src/components/input/LimitedTextField";
 import { Add, Close, Delete } from "@mui/icons-material";
 
 import Button, { ButtonColor } from "@/src/components/button/Button";
@@ -295,7 +296,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                         </div>
 
                         <div className="flex flex-col gap-6 pt-3">
-                            <TextField
+                            <LimitedTextField
                                 label="Nome do Produto"
                                 placeholder="Ex: Pastel de Carne"
                                 value={nome}
@@ -310,7 +311,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                                 }
                             />
 
-                            <TextField
+                            <LimitedTextField
                                 label="Descrição"
                                 placeholder="Ex: Pastel crocante recheado com carne bovina temperada"
                                 value={descricao}

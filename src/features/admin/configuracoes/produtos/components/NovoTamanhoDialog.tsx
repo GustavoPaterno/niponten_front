@@ -6,8 +6,8 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    TextField,
 } from "@mui/material";
+import LimitedTextField from "@/src/components/input/LimitedTextField";
 
 import Button, { ButtonColor } from "@/src/components/button/Button";
 import { useToast } from "@/src/components/feedback/ToastProvider";
@@ -75,7 +75,7 @@ function NovoTamanhoForm({
                     qualquer produto.
                 </p>
 
-                <TextField
+                <LimitedTextField
                     autoFocus
                     label="Nome do tamanho"
                     placeholder="Ex: Médio"
