@@ -285,7 +285,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                     )}
 
                     <div className="mb-8">
-                        <div className="mb-5">
+                        <div className="mb-2">
                             <h3 className="pt-2 text-base font-semibold text-gray-800">
                                 Informações gerais
                             </h3>
@@ -324,7 +324,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-8 border-t border-gray-200 pt-2 lg:grid-cols-2 lg:gap-6">
+                    <div className="grid grid-cols-1 gap-5 border-t border-gray-200 pt-2 lg:grid-cols-2 lg:gap-6">
                         {/* Ingredientes */}
                         <div className="min-w-0">
                             <div className="mb-5 flex items-start justify-between gap-3">
@@ -350,6 +350,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                             </div>
 
                             <Menu
+                                className="mt-2"
                                 anchorEl={ingredientesAnchorEl}
                                 open={Boolean(ingredientesAnchorEl)}
                                 onClose={() => setIngredientesAnchorEl(null)}

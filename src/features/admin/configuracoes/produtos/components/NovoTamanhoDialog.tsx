@@ -70,7 +70,7 @@ function NovoTamanhoForm({
             <DialogTitle>Novo tamanho</DialogTitle>
 
             <DialogContent>
-                <p className="mb-4 text-sm text-gray-500">
+                <p className="mb-2 text-sm text-gray-500">
                     O tamanho fica disponível no catálogo e pode ser usado em
                     qualquer produto.
                 </p>
