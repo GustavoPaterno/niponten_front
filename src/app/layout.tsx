@@ -1,3 +1,7 @@
+
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import SidebarProvider from "../components/SidebarProvider";
 import "./globals.css";
 import Header from "@/src/components/header/Header";
 import { ToastProvider } from "@/src/components/feedback/ToastProvider";
