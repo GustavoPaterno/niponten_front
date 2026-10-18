@@ -8,7 +8,7 @@ import {
   useState,
 } from "react";
 
-import SidebarBuild from "../features/sidebar/build/SidebarBuild";
+import SidebarBuild from "@/src/features/sidebar/build/SidebarBuild";
 
 type SidebarContextType = {
   openSidebar: () => void;
