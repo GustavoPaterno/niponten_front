@@ -64,6 +64,10 @@ const TRADUCOES: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
                 : "Há um ingrediente repetido neste produto.",
     ],
     [
+        /^Email already registered/,
+        () => "Este e-mail já está cadastrado. Tente entrar ou use outro e-mail.",
+    ],
+    [
         /^Product \d+ already has size \d+/,
         () => "Este tamanho já foi adicionado ao produto.",
     ],
