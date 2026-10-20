@@ -1,17 +1,25 @@
+"use client";
+
 import Image from "next/image";
 import MenuIcon from "@mui/icons-material/Menu";
 import { ShoppingCartOutlined } from "@mui/icons-material";
+import { useSidebar } from "@/src/components/sidebar/SidebarProvider";
 
 export default function Header() {
     const userRole = "ADM" // Chumbado
-    
+
+    const { openSidebar } = useSidebar();
+
     return (
         <header className="fixed top-0 z-50 h-20 w-full bg-(--primary)">
             <div className="flex h-full items-center">
-                <div className="flex w-16 h-full shrink-0 items-center justify-center">
+                <button
+                    type="button"
+                    onClick={openSidebar}
+                    aria-label="Abrir menu lateral"
+                    className="flex w-16 h-full shrink-0 cursor-pointer items-center justify-center">
                     <MenuIcon fontSize="large" />
-                </div>
-
+                    </button>
                 <div className="flex min-w-0 h-full gap-2 flex-1 items-center">
                     <Image
                         src="/images/marusan-logo.jpg"

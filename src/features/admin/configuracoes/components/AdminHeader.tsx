@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useSidebar } from "../../../components/SidebarProvider";
+import { useSidebar } from "@/src/components/sidebar/SidebarProvider";
 
 export default function AdminHeader() {
   const { openSidebar } = useSidebar();

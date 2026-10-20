@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useSidebar } from "../../../components/SidebarProvider";
+import { useSidebar } from "@/src/components/sidebar/SidebarProvider";
 
 const pages = [
   { label: "Ver Produtos", href: "/menu" },
