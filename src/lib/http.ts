@@ -1,8 +1,8 @@
 /**
- * Tratamento padrão das respostas do SDK (nippon-ten-api-client).
+ * Tratamento padrão das respostas do SDK (nippon-ten, gerado com typescript-axios).
  *
- * O SDK não lança exceção em erro HTTP: devolve { data, error, response }. Aqui isso é
- * convertido em exceção (ApiError) com uma mensagem em português pronta para exibir.
+ * O axios lança exceção em erro HTTP (com `response`) e em falha de rede (sem `response`).
+ * Aqui isso é convertido em ApiError, com uma mensagem em português pronta para exibir.
  */
 
 export class ApiError extends Error {
@@ -16,9 +16,7 @@ export class ApiError extends Error {
 }
 
 interface SdkResult<T> {
-    data?: T;
-    error?: unknown;
-    response?: Response;
+    data: T;
 }
 
 const ENTIDADES: Record<string, string> = {
@@ -149,24 +147,21 @@ export function criarApiError(status: number, error: unknown): ApiError {
 async function executar<T>(
     requisicao: PromiseLike<SdkResult<T>>
 ): Promise<SdkResult<T>> {
-    let resultado: SdkResult<T>;
-
     try {
-        resultado = await requisicao;
-    } catch {
-        throw new ApiError(
-            0,
-            "Não foi possível conectar ao servidor. Verifique se o backend está no ar."
-        );
+        return await requisicao;
+    } catch (erro) {
+        const resposta = (erro as { response?: { status: number; data: unknown } })
+            .response;
+
+        if (!resposta) {
+            throw new ApiError(
+                0,
+                "Não foi possível conectar ao servidor. Verifique se o backend está no ar."
+            );
+        }
+
+        throw criarApiError(resposta.status, resposta.data);
     }
-
-    const status = resultado.response?.status ?? 0;
-
-    if (resultado.error !== undefined || (resultado.response && !resultado.response.ok)) {
-        throw criarApiError(status, resultado.error);
-    }
-
-    return resultado;
 }
 
 /** Aguarda uma chamada do SDK que devolve conteúdo e retorna só o `data`. */

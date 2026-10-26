@@ -1,7 +1,7 @@
 import type {
     ProductDetailResponse,
     ProductResponse,
-} from "nippon-ten-api-client";
+} from "nippon-ten";
 
 import { api } from "@/src/lib/api";
 import { unwrap, unwrapVoid } from "@/src/lib/http";
@@ -120,9 +120,9 @@ function montarProduto(
  */
 export async function listarProdutos(): Promise<Produto[]> {
     const [produtos, ingredientes, tamanhos] = await Promise.all([
-        unwrap(api.product.getAll()),
-        unwrap(api.ingredient.getAll()),
-        unwrap(api.size.getAll()),
+        unwrap(api.product.productsGet()),
+        unwrap(api.ingredient.ingredientsGet()),
+        unwrap(api.size.sizesGet()),
     ]);
 
     const mapaIngredientes = new Map<number, Ingrediente>(
@@ -137,7 +137,7 @@ export async function listarProdutos(): Promise<Produto[]> {
 
     const detalhes = await Promise.all(
         (produtos ?? []).map((p: ProductResponse) =>
-            unwrap(api.product.getById({ path: { id: p.id as number } }))
+            unwrap(api.product.productsIdGet(p.id as number))
         )
     );
 
@@ -146,18 +146,16 @@ export async function listarProdutos(): Promise<Produto[]> {
 
 export async function criarProduto(input: ProdutoInput): Promise<void> {
     await unwrap(
-        api.product.create({
-            body: {
-                product: {
-                    name: input.name.trim(),
-                    description: input.description.trim() || undefined,
-                    status: input.status,
-                },
-                ingredients: input.ingredientIds.map((ingredientId) => ({
-                    ingredientId,
-                })),
-                sizes: input.sizes,
+        api.product.productsPost({
+            product: {
+                name: input.name.trim(),
+                description: input.description.trim() || undefined,
+                status: input.status,
             },
+            ingredients: input.ingredientIds.map((ingredientId) => ({
+                ingredientId,
+            })),
+            sizes: input.sizes,
         })
     );
 }
@@ -178,14 +176,11 @@ export async function atualizarProduto(
     input: ProdutoInput
 ): Promise<void> {
     await unwrap(
-        api.product.update({
-            path: { id: atual.id },
-            body: {
-                name: input.name.trim(),
-                description: input.description.trim() || undefined,
-                imageUrl: atual.imageUrl ?? undefined,
-                status: input.status,
-            },
+        api.product.productsIdPut(atual.id, {
+            name: input.name.trim(),
+            description: input.description.trim() || undefined,
+            imageUrl: atual.imageUrl ?? undefined,
+            status: input.status,
         })
     );
 
@@ -196,9 +191,8 @@ export async function atualizarProduto(
     for (const ingredientId of input.ingredientIds) {
         if (!idsAtuais.has(ingredientId)) {
             await unwrap(
-                api.product.addIngredient({
-                    path: { productId: atual.id },
-                    body: { ingredientId },
+                api.product.productsProductIdIngredientsPost(atual.id, {
+                    ingredientId,
                 })
             );
         }
@@ -207,12 +201,10 @@ export async function atualizarProduto(
     for (const existente of atual.ingredientes) {
         if (!idsDesejados.has(existente.ingredientId)) {
             await unwrapVoid(
-                api.product.removeIngredient({
-                    path: {
-                        productId: atual.id,
-                        productIngredientId: existente.id,
-                    },
-                })
+                api.product.productsProductIdIngredientsProductIngredientIdDelete(
+                    atual.id,
+                    existente.id
+                )
             );
         }
     }
@@ -226,10 +218,7 @@ export async function atualizarProduto(
 
         if (!existente) {
             await unwrap(
-                api.product.addSize({
-                    path: { productId: atual.id },
-                    body: desejado,
-                })
+                api.product.productsProductIdSizesPost(atual.id, desejado)
             );
         } else if (
             existente.price !== desejado.price ||
@@ -237,10 +226,11 @@ export async function atualizarProduto(
         ) {
             // No path, `sizeId` é o id da associação produto+tamanho.
             await unwrap(
-                api.product.updateSize({
-                    path: { productId: atual.id, sizeId: existente.id },
-                    body: desejado,
-                })
+                api.product.productsProductIdSizesSizeIdPut(
+                    atual.id,
+                    existente.id,
+                    desejado
+                )
             );
         }
     }
@@ -248,9 +238,10 @@ export async function atualizarProduto(
     for (const existente of atual.tamanhos) {
         if (!tamanhosDesejados.has(existente.sizeId)) {
             await unwrapVoid(
-                api.product.removeSize({
-                    path: { productId: atual.id, sizeId: existente.id },
-                })
+                api.product.productsProductIdSizesSizeIdDelete(
+                    atual.id,
+                    existente.id
+                )
             );
         }
     }
@@ -261,20 +252,17 @@ export async function alterarStatusProduto(
     status: ProdutoStatus
 ): Promise<void> {
     await unwrap(
-        api.product.update({
-            path: { id: produto.id },
-            body: {
-                name: produto.name,
-                description: produto.description || undefined,
-                imageUrl: produto.imageUrl ?? undefined,
-                status,
-            },
+        api.product.productsIdPut(produto.id, {
+            name: produto.name,
+            description: produto.description || undefined,
+            imageUrl: produto.imageUrl ?? undefined,
+            status,
         })
     );
 }
 
 export async function excluirProduto(id: number): Promise<void> {
-    await unwrapVoid(api.product.delete({ path: { id } }));
+    await unwrapVoid(api.product.productsIdDelete(id));
 }
 
 /** Combos e promoções que dependem do produto (para decidir o que mais inativar). */
@@ -282,7 +270,7 @@ export async function buscarDependentesProduto(
     id: number
 ): Promise<ProdutoDependentes> {
     const dependentes = await unwrap(
-        api.product.getDependents({ path: { id } })
+        api.product.productsIdDependentsGet(id)
     );
 
     return {

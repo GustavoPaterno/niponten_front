@@ -1,20 +1,28 @@
 import { ApiError, criarApiError } from "@/src/lib/http";
 
+/**
+ * Autenticação.
+ *
+ * O token nunca chega ao JavaScript: o proxy em src/app/backend/[...path]/route.ts o guarda
+ * num cookie httpOnly no login, envia como Authorization: Bearer em cada chamada ao backend
+ * e o renova sozinho pelo /auth/refresh quando expira. Aqui só disparamos login e logout.
+ */
+
 export interface LoginInput {
     email: string;
     password: string;
 }
 
-export interface TokenResponse {
-    accessToken: string;
+/** Resposta do login vista pelo navegador (o accessToken é retirado pelo proxy). */
+export interface LoginResponse {
     tokenType: string;
     expiresIn: number;
 }
 
-const TOKEN_KEY = "marusan.accessToken";
-const TOKEN_EVENT = "marusan:auth-changed";
+const ERRO_CONEXAO =
+    "Não foi possível conectar ao servidor. Verifique se o backend está no ar.";
 
-export async function login(input: LoginInput): Promise<TokenResponse> {
+export async function login(input: LoginInput): Promise<LoginResponse> {
     let response: Response;
 
     try {
@@ -28,17 +36,11 @@ export async function login(input: LoginInput): Promise<TokenResponse> {
             }),
         });
     } catch {
-        throw new ApiError(
-            0,
-            "Não foi possível conectar ao servidor. Verifique se o backend está no ar."
-        );
+        throw new ApiError(0, ERRO_CONEXAO);
     }
 
     if (response.ok) {
-        const token = (await response.json()) as TokenResponse;
-        salvarToken(token.accessToken);
-
-        return token;
+        return (await response.json()) as LoginResponse;
     }
 
     const corpo = await response.json().catch(() => undefined);
@@ -57,43 +59,21 @@ export async function login(input: LoginInput): Promise<TokenResponse> {
     throw criarApiError(response.status, corpo);
 }
 
-export function obterToken(): string | null {
+/**
+ * Encerra a sessão: o backend invalida o refresh token e o proxy apaga o cookie do token.
+ * Não lança erro: mesmo com o backend fora do ar, o usuário deve conseguir sair.
+ */
+export async function sair(): Promise<void> {
     try {
-        return sessionStorage.getItem(TOKEN_KEY);
+        await fetch("/backend/auth/logout", {
+            method: "POST",
+            headers: { "X-Requested-With": "nippon-ten" },
+            credentials: "include",
+        });
     } catch {
-        return null;
+        // Sem conexão: não há o que fazer além de seguir para a tela de login.
     }
 }
-
-export function salvarToken(token: string): void {
-    try {
-        sessionStorage.setItem(TOKEN_KEY, token);
-        window.dispatchEvent(new Event(TOKEN_EVENT));
-    } catch {
-        // sessionStorage indisponível: o token só vale para esta chamada.
-    }
-}
-
-export function removerToken(): void {
-    try {
-        sessionStorage.removeItem(TOKEN_KEY);
-        window.dispatchEvent(new Event(TOKEN_EVENT));
-    } catch {
-        // nada a fazer
-    }
-}
-
-/** Para useSyncExternalStore: avisa quando o token muda. */
-export function assinarToken(callback: () => void): () => void {
-    window.addEventListener(TOKEN_EVENT, callback);
-    window.addEventListener("storage", callback);
-
-    return () => {
-        window.removeEventListener(TOKEN_EVENT, callback);
-        window.removeEventListener("storage", callback);
-    };
-}
-
 
 export type UserType = "CLIENT" | "INTERNAL";
 
@@ -111,14 +91,9 @@ export async function buscarMe(): Promise<Me> {
     let response: Response;
 
     try {
-        response = await fetch("/backend/auth/me", {
-            headers: { Authorization: `Bearer ${obterToken() ?? ""}` },
-        });
+        response = await fetch("/backend/auth/me", { credentials: "include" });
     } catch {
-        throw new ApiError(
-            0,
-            "Não foi possível conectar ao servidor. Verifique se o backend está no ar."
-        );
+        throw new ApiError(0, ERRO_CONEXAO);
     }
 
     if (!response.ok) {
@@ -143,7 +118,7 @@ export async function entrar(input: LoginInput): Promise<string> {
 
         return destinoPorTipo(me.type);
     } catch (erro) {
-        removerToken();
+        await sair();
         throw erro;
     }
 }
