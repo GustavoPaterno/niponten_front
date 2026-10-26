@@ -1,4 +1,4 @@
-import type { ComboResponse } from "nippon-ten-api-client";
+import type { ComboResponse } from "nippon-ten";
 
 import { api } from "@/src/lib/api";
 import { unwrap, unwrapVoid } from "@/src/lib/http";
@@ -61,8 +61,8 @@ function montarCombo(
 /** Lista combos com os nomes dos produtos (o GET /combos não traz os produtos). */
 export async function listarCombos(): Promise<Combo[]> {
     const [combos, produtos] = await Promise.all([
-        unwrap(api.combo.getAll()),
-        unwrap(api.product.getAll()),
+        unwrap(api.combo.combosGet()),
+        unwrap(api.product.productsGet()),
     ]);
 
     const nomes = new Map<number, string>(
@@ -72,7 +72,7 @@ export async function listarCombos(): Promise<Combo[]> {
     return Promise.all(
         (combos ?? []).map(async (combo) => {
             const associacoes = await unwrap(
-                api.combo.getProducts({ path: { comboId: combo.id as number } })
+                api.combo.combosComboIdProductsGet(combo.id as number)
             );
 
             return montarCombo(
@@ -102,11 +102,9 @@ function toRequest(input: ComboInput, imageUrl: string | null) {
 
 export async function criarCombo(input: ComboInput): Promise<void> {
     await unwrap(
-        api.combo.create({
-            body: {
-                combo: toRequest(input, null),
-                products: input.productIds.map((productId) => ({ productId })),
-            },
+        api.combo.combosPost({
+            combo: toRequest(input, null),
+            products: input.productIds.map((productId) => ({ productId })),
         })
     );
 }
@@ -124,10 +122,7 @@ export async function atualizarCombo(
     input: ComboInput
 ): Promise<void> {
     await unwrap(
-        api.combo.update({
-            path: { id: atual.id },
-            body: toRequest(input, atual.imageUrl),
-        })
+        api.combo.combosIdPut(atual.id, toRequest(input, atual.imageUrl))
     );
 
     const desejados = new Set(input.productIds);
@@ -136,10 +131,7 @@ export async function atualizarCombo(
     for (const productId of input.productIds) {
         if (!existentes.has(productId)) {
             await unwrap(
-                api.combo.addProduct({
-                    path: { comboId: atual.id },
-                    body: { productId },
-                })
+                api.combo.combosComboIdProductsPost(atual.id, { productId })
             );
         }
     }
@@ -147,9 +139,10 @@ export async function atualizarCombo(
     for (const associacao of atual.produtos) {
         if (!desejados.has(associacao.productId)) {
             await unwrapVoid(
-                api.combo.removeProduct({
-                    path: { comboId: atual.id, comboProductId: associacao.id },
-                })
+                api.combo.combosComboIdProductsComboProductIdDelete(
+                    atual.id,
+                    associacao.id
+                )
             );
         }
     }
@@ -160,9 +153,9 @@ export async function alterarStatusCombo(
     status: ComboStatus
 ): Promise<void> {
     await unwrap(
-        api.combo.update({
-            path: { id: combo.id },
-            body: toRequest(
+        api.combo.combosIdPut(
+            combo.id,
+            toRequest(
                 {
                     name: combo.name,
                     description: combo.description,
@@ -173,11 +166,11 @@ export async function alterarStatusCombo(
                     productIds: [],
                 },
                 combo.imageUrl
-            ),
-        })
+            )
+        )
     );
 }
 
 export async function excluirCombo(id: number): Promise<void> {
-    await unwrapVoid(api.combo.delete({ path: { id } }));
+    await unwrapVoid(api.combo.combosIdDelete(id));
 }

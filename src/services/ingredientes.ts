@@ -1,4 +1,4 @@
-import type { IngredientResponse } from "nippon-ten-api-client";
+import type { IngredientResponse } from "nippon-ten";
 
 import { api } from "@/src/lib/api";
 import { unwrap, unwrapVoid } from "@/src/lib/http";
@@ -49,7 +49,7 @@ function toRequest(input: IngredienteInput, imageUrl: string | null) {
 }
 
 export async function listarIngredientes(): Promise<Ingrediente[]> {
-    const lista = await unwrap(api.ingredient.getAll());
+    const lista = await unwrap(api.ingredient.ingredientsGet());
 
     return (lista ?? []).map(toIngrediente);
 }
@@ -58,7 +58,7 @@ export async function criarIngrediente(
     input: IngredienteInput
 ): Promise<Ingrediente> {
     const criado = await unwrap(
-        api.ingredient.create({ body: toRequest(input, null) })
+        api.ingredient.ingredientsPost(toRequest(input, null))
     );
 
     // O OpenAPI não declara o corpo da resposta 201, então o SDK o tipa como unknown.
@@ -70,10 +70,10 @@ export async function atualizarIngrediente(
     input: IngredienteInput
 ): Promise<Ingrediente> {
     const atualizado = await unwrap(
-        api.ingredient.update({
-            path: { id: ingrediente.id },
-            body: toRequest(input, ingrediente.imageUrl),
-        })
+        api.ingredient.ingredientsIdPut(
+            ingrediente.id,
+            toRequest(input, ingrediente.imageUrl)
+        )
     );
 
     return toIngrediente(atualizado);
@@ -92,7 +92,7 @@ export function alterarStatusIngrediente(
 }
 
 export async function excluirIngrediente(id: number): Promise<void> {
-    await unwrapVoid(api.ingredient.delete({ path: { id } }));
+    await unwrapVoid(api.ingredient.ingredientsIdDelete(id));
 }
 
 /** Quem usa este ingrediente: serve para o usuário decidir o que também marcar como esgotado. */
@@ -100,7 +100,7 @@ export async function buscarDependentesIngrediente(
     id: number
 ): Promise<IngredienteDependentes> {
     const dependentes = await unwrap(
-        api.ingredient.getDependents({ path: { id } })
+        api.ingredient.ingredientsIdDependentsGet(id)
     );
 
     return {
