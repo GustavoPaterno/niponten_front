@@ -66,10 +66,31 @@ const TRADUCOES: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
         () => "Este e-mail já está cadastrado. Tente entrar ou use outro e-mail.",
     ],
     [
+        /^No default internal role configured/,
+        () => "Escolha um cargo para o usuário (não há cargo padrão configurado).",
+    ],
+    [
         /^Product \d+ already has size \d+/,
         () => "Este tamanho já foi adicionado ao produto.",
     ],
 ];
+
+// Último trecho do `field` das violações (ex.: "create.request.internal.cpf") -> nome na tela.
+const CAMPOS: Record<string, string> = {
+    name: "Nome",
+    lastName: "Sobrenome",
+    cpf: "CPF",
+    email: "E-mail",
+    password: "Senha",
+    price: "Preço",
+    permissions: "Permissões",
+};
+
+function nomeDoCampo(field: string | undefined): string | null {
+    const ultimo = field?.split(".").pop();
+
+    return ultimo ? (CAMPOS[ultimo] ?? null) : null;
+}
 
 function mensagemDoCorpo(error: unknown): string | null {
     if (typeof error === "string" && error.trim()) {
@@ -91,8 +112,12 @@ function mensagemDoCorpo(error: unknown): string | null {
         // Bean Validation do Quarkus: { title, violations: [{ field, message }] }
         if (Array.isArray(corpo.violations) && corpo.violations.length > 0) {
             return corpo.violations
-                .map((v) => v.message)
-                .filter(Boolean)
+                .filter((v) => v.message)
+                .map((v) => {
+                    const nome = nomeDoCampo(v.field);
+
+                    return nome ? `${nome}: ${v.message}` : v.message;
+                })
                 .join("; ");
         }
     }
