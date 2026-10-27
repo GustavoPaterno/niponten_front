@@ -26,7 +26,6 @@ const ENTIDADES: Record<string, string> = {
     Size: "tamanho",
 };
 
-// Mensagens conhecidas do backend (em inglês) -> português.
 const TRADUCOES: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
     [
         /^Product \d+ cannot be deleted: used by (\d+) combo\(s\) and (\d+) promotion\(s\)/,
@@ -75,7 +74,6 @@ const TRADUCOES: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
     ],
 ];
 
-// Último trecho do `field` das violações (ex.: "create.request.internal.cpf") -> nome na tela.
 const CAMPOS: Record<string, string> = {
     name: "Nome",
     lastName: "Sobrenome",
@@ -104,12 +102,10 @@ function mensagemDoCorpo(error: unknown): string | null {
             violations?: Array<{ field?: string; message?: string }>;
         };
 
-        // ErrorResponse do backend: { message }
         if (typeof corpo.message === "string") {
             return corpo.message;
         }
 
-        // Bean Validation do Quarkus: { title, violations: [{ field, message }] }
         if (Array.isArray(corpo.violations) && corpo.violations.length > 0) {
             return corpo.violations
                 .filter((v) => v.message)

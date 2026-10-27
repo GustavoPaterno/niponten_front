@@ -26,6 +26,5 @@ export async function criarTamanho(name: string): Promise<Tamanho> {
         api.size.sizesPost({ name: name.trim() })
     );
 
-    // O OpenAPI não declara o corpo da resposta 201, então o SDK o tipa como unknown.
     return toTamanho(criado as SizeResponse);
 }

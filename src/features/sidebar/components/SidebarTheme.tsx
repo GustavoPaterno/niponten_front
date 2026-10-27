@@ -38,7 +38,7 @@ export default function SidebarTheme() {
         Configurações
       </h2>
 
-      <div className="flex w-[270px] items-center justify-between rounded-md bg-gray-100 px-3 py-3 text-xs text-black">
+      <div className="flex w-full items-center justify-between rounded-md bg-gray-100 px-3 py-3 text-xs text-black">
         <span>Tema</span>
 
         <div className="flex items-center gap-2">

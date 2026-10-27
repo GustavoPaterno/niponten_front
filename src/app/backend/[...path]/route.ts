@@ -1,30 +1,11 @@
-/**
- * Proxy do backend (nippon-ten): /backend/* -> BACKEND_URL/*.
- *
- * Existe no lugar do rewrite do next.config.ts porque o navegador manda o header Origin em todo
- * POST/PUT/DELETE (mesmo na mesma origem) e o rewrite o repassa. O backend só aceita no CORS as
- * origens de FRONT_ORIGINS e responde 403 para qualquer outra, o que quebrava login e cadastro.
- * Aqui a chamada ao backend sai do servidor do Next, sem Origin, então não há checagem de CORS.
- *
- * Também cuida da autenticação, para que o token nunca fique acessível ao JavaScript:
- * - /auth/login e /auth/refresh: o token devolvido é salvo no cookie httpOnly TOKEN_COOKIE
- *   (válido pelo mesmo tempo do token) e retirado do corpo da resposta.
- * - Demais chamadas: o cookie vira o header Authorization: Bearer.
- * - Token expirado (cookie ausente ou 401 do backend): chama /auth/refresh com o cookie
- *   nt_refresh do backend, salva o token novo e repete a chamada uma vez.
- * - /auth/logout: apaga o cookie do token.
- */
-
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
 
 const TOKEN_COOKIE = "marusan_token";
 const REFRESH_COOKIE = "nt_refresh";
-// O backend exige este header em /auth/refresh e /auth/logout (proteção contra CSRF).
 const CSRF_HEADER = ["X-Requested-With", "nippon-ten"] as const;
 
 const SEGURO = process.env.NODE_ENV === "production";
 
-// Cabeçalhos que não devem ser repassados ao backend.
 const NAO_REPASSAR_REQUEST = new Set([
     "host",
     "origin",
@@ -33,7 +14,6 @@ const NAO_REPASSAR_REQUEST = new Set([
     "content-length",
 ]);
 
-// O fetch já descomprime o corpo, então estes cabeçalhos da resposta deixam de valer.
 const NAO_REPASSAR_RESPONSE = new Set([
     "content-encoding",
     "content-length",
@@ -118,14 +98,9 @@ function montarHeaders(request: Request, token: string | null): Headers {
 
 interface Renovacao {
     token: string | null;
-    // Set-Cookie a devolver ao navegador (token novo, refresh rotacionado ou limpeza).
     setCookies: string[];
 }
 
-// O backend troca o nt_refresh a cada uso, então reusar o antigo falha. Uma tela faz várias
-// chamadas ao mesmo tempo: quando o token expira, todas chegariam com o mesmo nt_refresh.
-// Por isso a renovação é feita uma vez e o resultado é reaproveitado por alguns segundos.
-// (Vale por instância do servidor; em várias instâncias, no pior caso o usuário entra de novo.)
 const RENOVACOES = new Map<string, Promise<Renovacao>>();
 const REAPROVEITAR_MS = 30_000;
 
@@ -212,7 +187,6 @@ async function responder(
     const emitiuToken = caminho === "/auth/login" || caminho === "/auth/refresh";
 
     if (emitiuToken && resposta.ok) {
-        // Guarda o token no cookie httpOnly e entrega ao navegador só os metadados.
         const json = (await resposta.json().catch(() => ({}))) as TokenResponse;
 
         if (json.accessToken) {
@@ -245,7 +219,6 @@ async function repassar(request: Request): Promise<Response> {
     const destino = `${BACKEND_URL}${caminho}${url.search}`;
 
     const temCorpo = request.method !== "GET" && request.method !== "HEAD";
-    // Lido uma vez para poder repetir a chamada depois de um refresh.
     const corpo = temCorpo ? await request.arrayBuffer() : undefined;
 
     const rotaDeAuth = caminho.startsWith("/auth/") && caminho !== "/auth/me";
@@ -253,7 +226,6 @@ async function repassar(request: Request): Promise<Response> {
 
     let token = rotaDeAuth ? null : lerCookie(request, TOKEN_COOKIE);
 
-    // Cookie do token já expirou, mas ainda há refresh: renova antes de chamar.
     if (!rotaDeAuth && !token && lerCookie(request, REFRESH_COOKIE)) {
         const renovacao = await renovarToken(request);
         token = renovacao.token;
@@ -273,7 +245,6 @@ async function repassar(request: Request): Promise<Response> {
     try {
         resposta = await chamar(token);
 
-        // Token recusado (expirou antes do cookie, foi revogado...): tenta renovar uma vez.
         if (resposta.status === 401 && !rotaDeAuth && token) {
             const renovacao = await renovarToken(request);
             extras.push(...renovacao.setCookies);

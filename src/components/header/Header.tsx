@@ -1,14 +1,17 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import MenuIcon from "@mui/icons-material/Menu";
 import { ShoppingCartOutlined } from "@mui/icons-material";
+import { useSessao } from "@/src/components/auth/SessaoProvider";
 import { useSidebar } from "@/src/components/sidebar/SidebarProvider";
 
 export default function Header() {
-    const userRole = "ADM" // Chumbado
-
+    const { me, carregando } = useSessao();
     const { openSidebar } = useSidebar();
+
+    const nome = me?.name?.trim() || me?.email || "";
 
     return (
         <header className="fixed top-0 z-50 h-20 w-full bg-(--primary)">
@@ -34,12 +37,23 @@ export default function Header() {
                     </span>
                 </div>
 
-                <div className="flex w-35 h-full gap-5 shrink-0 items-center justify-center">
+                <div className="flex h-full shrink-0 items-center justify-end gap-4 pr-4 sm:gap-5 sm:pr-6">
                     <div>
                         <ShoppingCartOutlined fontSize="large" />
                     </div>
-                    <div>
-                        <span className="text-5sm font-bold">{userRole}</span>
+                    <div className="min-w-0">
+                        {carregando ? null : me ? (
+                            <span
+                                className="block max-w-[110px] truncate text-5sm font-bold"
+                                title={nome}
+                            >
+                                {nome}
+                            </span>
+                        ) : (
+                            <Link href="/login" className="text-5sm font-bold">
+                                Entrar
+                            </Link>
+                        )}
                     </div>
                 </div>
             </div>

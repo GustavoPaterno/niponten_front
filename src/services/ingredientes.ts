@@ -41,7 +41,6 @@ function toRequest(input: IngredienteInput, imageUrl: string | null) {
     return {
         name: input.name.trim(),
         description: input.description.trim() || undefined,
-        // Imagens ficam para uma próxima etapa: só preservamos a que já existe.
         imageUrl: imageUrl ?? undefined,
         price: input.price,
         status: input.status,
@@ -61,7 +60,6 @@ export async function criarIngrediente(
         api.ingredient.ingredientsPost(toRequest(input, null))
     );
 
-    // O OpenAPI não declara o corpo da resposta 201, então o SDK o tipa como unknown.
     return toIngrediente(criado as IngredientResponse);
 }
 

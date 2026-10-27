@@ -24,7 +24,6 @@ export default function LoginForm() {
         setEnviando(true);
 
         try {
-            // Cliente e usuário interno entram aqui; cada um é levado para a sua área.
             const destino = await entrar({ email, password });
             router.push(destino);
         } catch (e) {

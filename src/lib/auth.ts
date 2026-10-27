@@ -1,4 +1,5 @@
 import { ApiError, criarApiError } from "@/src/lib/http";
+import { destinoAposLogin } from "@/src/lib/navegacao";
 
 /**
  * Autenticação.
@@ -64,15 +65,12 @@ export async function login(input: LoginInput): Promise<LoginResponse> {
  * Não lança erro: mesmo com o backend fora do ar, o usuário deve conseguir sair.
  */
 export async function sair(): Promise<void> {
-    try {
         await fetch("/backend/auth/logout", {
             method: "POST",
             headers: { "X-Requested-With": "nippon-ten" },
             credentials: "include",
         });
-    } catch {
-        // Sem conexão: não há o que fazer além de seguir para a tela de login.
-    }
+
 }
 
 export type UserType = "CLIENT" | "INTERNAL";
@@ -106,17 +104,14 @@ export async function buscarMe(): Promise<Me> {
     return (await response.json()) as Me;
 }
 
-export function destinoPorTipo(tipo: UserType): string {
-    return tipo === "INTERNAL" ? "/admin/configuracoes" : "/menu";
-}
-
+/** Faz login e devolve para onde levar o usuário (a primeira página que ele pode acessar). */
 export async function entrar(input: LoginInput): Promise<string> {
     await login(input);
 
     try {
         const me = await buscarMe();
 
-        return destinoPorTipo(me.type);
+        return destinoAposLogin(me);
     } catch (erro) {
         await sair();
         throw erro;

@@ -9,9 +9,7 @@ import {
 } from "./cargos";
 
 export interface UsuarioInterno {
-    /** id do perfil interno (/internal/{id}). */
     id: number;
-    /** id da conta de login (/users/{id}), usado para ativar e desativar. */
     userId: number;
     name: string;
     lastName: string;
@@ -21,7 +19,6 @@ export interface UsuarioInterno {
     permissions: Permissao[];
     active: boolean;
 
-    // Campos derivados, prontos para exibição e busca na tabela.
     nomeCompleto: string;
     cargo: string;
     permissoesTexto: string;
@@ -42,15 +39,11 @@ export interface NovoUsuarioInternoInput extends UsuarioInternoInput {
     password: string;
 }
 
-/**
- * Lista os usuários internos. O GET /internal não traz e-mail nem status da conta, então
- * cruza com o GET /users (pelo userId) e com os cargos (para o nome do cargo).
- */
 export async function listarUsuariosInternos(): Promise<UsuarioInterno[]> {
     const [internos, usuarios, cargos] = await Promise.all([
         unwrap(api.internal.internalGet()),
         unwrap(api.user.usersGet()),
-        listarCargos(),
+        listarCargos().catch(() => []),
     ]);
 
     const contas = new Map(
