@@ -55,9 +55,33 @@ export default function SessaoProvider({
         setMe(null);
     }, []);
 
+    // Busca inicial. Os setState ficam nos callbacks da promise (não no corpo do efeito),
+    // e `cancelado` evita atualizar o estado depois que o componente sai da tela.
     useEffect(() => {
-        void recarregar();
-    }, [recarregar]);
+        let cancelado = false;
+
+        buscarMe()
+            .then((usuario) => {
+                if (!cancelado) {
+                    setMe(usuario);
+                }
+            })
+            .catch(() => {
+                // 401 (sem login) ou backend fora do ar: segue como visitante.
+                if (!cancelado) {
+                    setMe(null);
+                }
+            })
+            .finally(() => {
+                if (!cancelado) {
+                    setCarregando(false);
+                }
+            });
+
+        return () => {
+            cancelado = true;
+        };
+    }, []);
 
     return (
         <SessaoContext.Provider value={{ me, carregando, recarregar, sair }}>

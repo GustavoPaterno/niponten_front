@@ -65,12 +65,15 @@ export async function login(input: LoginInput): Promise<LoginResponse> {
  * Não lança erro: mesmo com o backend fora do ar, o usuário deve conseguir sair.
  */
 export async function sair(): Promise<void> {
+    try {
         await fetch("/backend/auth/logout", {
             method: "POST",
             headers: { "X-Requested-With": "nippon-ten" },
             credentials: "include",
         });
-
+    } catch {
+        // Sem conexão: não há o que fazer além de seguir para a tela de login.
+    }
 }
 
 export type UserType = "CLIENT" | "INTERNAL";
