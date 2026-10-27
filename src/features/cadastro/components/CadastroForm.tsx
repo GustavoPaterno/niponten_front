@@ -46,7 +46,6 @@ export default function CadastroForm() {
                 password: form.password,
             });
 
-            // Conta criada: já entra e vai para a área do usuário.
             const destino = await entrar({
                 email: form.email,
                 password: form.password,

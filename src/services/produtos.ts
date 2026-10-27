@@ -40,7 +40,6 @@ export interface Produto {
     ingredientes: ProdutoIngrediente[];
     tamanhos: ProdutoTamanho[];
 
-    // Campos derivados, prontos para exibição e busca na tabela.
     ingredientesTexto: string;
     tamanhosTexto: string;
     precoMinimo: number | null;
@@ -184,7 +183,6 @@ export async function atualizarProduto(
         })
     );
 
-    // Ingredientes
     const idsDesejados = new Set(input.ingredientIds);
     const idsAtuais = new Set(atual.ingredientes.map((i) => i.ingredientId));
 
@@ -209,7 +207,6 @@ export async function atualizarProduto(
         }
     }
 
-    // Tamanhos: adiciona novos, atualiza alterados e só então remove os que saíram.
     const tamanhosAtuais = new Map(atual.tamanhos.map((t) => [t.sizeId, t]));
     const tamanhosDesejados = new Set(input.sizes.map((s) => s.sizeId));
 
@@ -224,7 +221,6 @@ export async function atualizarProduto(
             existente.price !== desejado.price ||
             existente.status !== desejado.status
         ) {
-            // No path, `sizeId` é o id da associação produto+tamanho.
             await unwrap(
                 api.product.productsProductIdSizesSizeIdPut(
                     atual.id,

@@ -103,6 +103,7 @@ function UsuariosForm({ usuario, onClose, onSave }: UsuariosFormProps) {
 
     const [cargos, setCargos] = useState<Cargo[]>([]);
     const [carregandoCargos, setCarregandoCargos] = useState(true);
+    const [semAcessoCargos, setSemAcessoCargos] = useState(false);
 
     const [tentouSalvar, setTentouSalvar] = useState(false);
     const [salvando, setSalvando] = useState(false);
@@ -118,7 +119,6 @@ function UsuariosForm({ usuario, onClose, onSave }: UsuariosFormProps) {
 
                 setCargos(lista);
 
-                // Na criação, já deixa selecionado o cargo padrão, se houver.
                 const padrao = lista.find((cargo) => cargo.padrao && cargo.active);
 
                 if (padrao) {
@@ -126,7 +126,9 @@ function UsuariosForm({ usuario, onClose, onSave }: UsuariosFormProps) {
                 }
             })
             .catch(() => {
-                // Sem a lista, o campo fica vazio; o erro aparece ao tentar salvar.
+                if (!cancelado) {
+                    setSemAcessoCargos(true);
+                }
             })
             .finally(() => {
                 if (!cancelado) {
@@ -145,9 +147,8 @@ function UsuariosForm({ usuario, onClose, onSave }: UsuariosFormProps) {
     const sobrenomeInvalido = sobrenome.trim() === "";
     const emailInvalido = !editando && !EMAIL_VALIDO.test(email.trim());
     const senhaInvalida = !editando && senha.trim() === "";
-    // O backend exige o CPF (inclusive na edição).
     const cpfInvalido = cpfDigitos.length !== 11;
-    const cargoInvalido = cargoId === "";
+    const cargoInvalido = cargoId === "" && !semAcessoCargos;
 
     const togglePermissao = (permissao: Permissao) => {
         setPermissoes((atual) =>
@@ -157,7 +158,6 @@ function UsuariosForm({ usuario, onClose, onSave }: UsuariosFormProps) {
         );
     };
 
-    // Mostra só cargos ativos, mas mantém o atual do usuário mesmo se estiver inativo.
     const cargosVisiveis = cargos.filter(
         (cargo) => cargo.active || cargo.id === usuario?.internalRoleId
     );
@@ -184,7 +184,7 @@ function UsuariosForm({ usuario, onClose, onSave }: UsuariosFormProps) {
             email,
             password: senha,
             cpf: cpfDigitos,
-            internalRoleId: cargoId,
+            internalRoleId: cargoId === "" ? null : cargoId,
             permissions: PERMISSOES.map((p) => p.valor).filter((p) =>
                 permissoes.includes(p)
             ),
@@ -316,6 +316,19 @@ function UsuariosForm({ usuario, onClose, onSave }: UsuariosFormProps) {
                         slotProps={{ htmlInput: { inputMode: "numeric" } }}
                     />
 
+                    {semAcessoCargos ? (
+                        <TextField
+                            label="Cargo"
+                            value={editando ? usuario.cargo : "Cargo padrão"}
+                            fullWidth
+                            disabled
+                            helperText={
+                                editando
+                                    ? "Você não tem permissão para ver cargos. O cargo atual será mantido."
+                                    : "Você não tem permissão para ver cargos. Será usado o cargo padrão."
+                            }
+                        />
+                    ) : (
                     <TextField
                         select
                         label="Cargo"
@@ -352,6 +365,7 @@ function UsuariosForm({ usuario, onClose, onSave }: UsuariosFormProps) {
                             </MenuItem>
                         ))}
                     </TextField>
+                    )}
 
                     <div>
                         <p className="text-sm font-medium text-gray-700">

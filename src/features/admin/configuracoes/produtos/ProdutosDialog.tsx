@@ -117,7 +117,6 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
             : [tamanhoVazio()]
     );
 
-    // Catálogos vindos da API
     const [catalogoIngredientes, setCatalogoIngredientes] = useState<
         Ingrediente[]
     >([]);
@@ -184,7 +183,6 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
         );
     };
 
-    // Tamanho recém-criado no catálogo: já entra selecionado em um card vazio (ou em um novo).
     const handleTamanhoCriado = (tamanho: Tamanho) => {
         setCatalogoTamanhos((atuais) => [...atuais, tamanho]);
         setNovoTamanhoAberto(false);

@@ -19,7 +19,6 @@ export async function cadastrarCliente(input: CadastroInput): Promise<void> {
             },
         });
     } catch (erro) {
-        // O client usa axios: erro HTTP lança uma exceção com `response`; sem `response` é falha de rede.
         const resposta = (erro as { response?: { status: number; data: unknown } })
             .response;
 

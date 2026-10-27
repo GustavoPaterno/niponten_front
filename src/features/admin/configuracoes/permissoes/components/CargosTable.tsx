@@ -51,7 +51,6 @@ export default function CargosTable({
     onEditar,
     onAlterarStatus,
 }: CargosTableProps) {
-    // Cargos do sistema (ex.: super_admin) não podem ser editados nem desativados.
     const actions: DataTableAction<Cargo>[] = [
         {
             icon: EditIcon,

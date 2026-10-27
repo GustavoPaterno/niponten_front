@@ -45,7 +45,6 @@ export interface CargoInput {
     padrao: boolean;
 }
 
-/** "super_admin" -> "Super admin" */
 function formatarNome(nome: string): string {
     const texto = nome.replace(/_/g, " ").trim();
 
@@ -53,7 +52,6 @@ function formatarNome(nome: string): string {
 }
 
 function toCargo(response: InternalRoleResponse): Cargo {
-    // `reserved` vem do backend, mas ainda não está no tipo gerado do SDK.
     const reservado = (response as { reserved?: boolean }).reserved ?? false;
 
     return {

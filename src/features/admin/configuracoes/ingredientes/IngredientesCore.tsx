@@ -82,7 +82,6 @@ export default function IngredientesCore() {
         setAcao({ tipo: "status", ingrediente });
         setDependentes(null);
 
-        // Só vale a pena listar dependentes ao marcar como esgotado.
         if (ingrediente.status !== "ACTIVE") {
             return;
         }

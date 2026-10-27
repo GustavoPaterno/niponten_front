@@ -23,7 +23,6 @@ export interface Combo {
     endDate: string | null;
     produtos: ComboProduto[];
 
-    // Derivado, pronto para exibição e busca na tabela.
     produtosTexto: string;
 }
 
@@ -91,7 +90,6 @@ function toRequest(input: ComboInput, imageUrl: string | null) {
     return {
         name: input.name.trim(),
         description: input.description.trim() || undefined,
-        // Imagens ficam para uma próxima etapa: só preservamos a que já existe.
         imageUrl: imageUrl ?? undefined,
         price: input.price,
         status: input.status,

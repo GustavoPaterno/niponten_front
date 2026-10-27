@@ -70,7 +70,6 @@ function CargoForm({ cargo, onClose, onSave }: CargoFormProps) {
     const editando = cargo !== null;
 
     const [nome, setNome] = useState(cargo?.name ?? "");
-    // O backend não devolve as permissões do cargo, então a edição começa sem nenhuma marcada.
     const [permissoes, setPermissoes] = useState<Permissao[]>([]);
     const [padrao, setPadrao] = useState(cargo?.padrao ?? false);
 

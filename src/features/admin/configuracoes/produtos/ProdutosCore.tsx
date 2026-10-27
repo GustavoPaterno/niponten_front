@@ -73,8 +73,6 @@ export default function ProdutosCore() {
             return true;
         } catch (erro) {
             if (editando) {
-                // A edição é feita em várias chamadas: parte delas pode já ter sido aplicada.
-                // Fecha o formulário e recarrega, para não editar em cima de dados desatualizados.
                 toast.error(
                     `${mensagemDeErro(erro)} Algumas alterações podem ter sido aplicadas: confira o produto na lista.`
                 );
@@ -84,7 +82,6 @@ export default function ProdutosCore() {
                 return true;
             }
 
-            // A criação é atômica no backend: nada foi salvo, o formulário continua aberto.
             toast.error(mensagemDeErro(erro));
 
             return false;
@@ -95,7 +92,6 @@ export default function ProdutosCore() {
         setAcao({ tipo: "status", produto });
         setDependentes(null);
 
-        // Só vale a pena listar dependentes ao inativar.
         if (produto.status !== "ACTIVE") {
             return;
         }
