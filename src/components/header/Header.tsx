@@ -6,10 +6,12 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { ShoppingCartOutlined } from "@mui/icons-material";
 import { useSessao } from "@/src/components/auth/SessaoProvider";
 import { useSidebar } from "@/src/components/sidebar/SidebarProvider";
+import { quantidadeTotal, useCarrinho } from "@/src/lib/carrinho";
 
 export default function Header() {
     const { me, carregando } = useSessao();
     const { openSidebar } = useSidebar();
+    const totalCarrinho = quantidadeTotal(useCarrinho());
 
     const nome = me?.name?.trim() || me?.email || "";
 
@@ -38,8 +40,21 @@ export default function Header() {
                 </div>
 
                 <div className="flex h-full shrink-0 items-center justify-end gap-4 pr-4 sm:gap-5 sm:pr-6">
-                    <div>
+                    <div
+                        className="relative"
+                        aria-label={
+                            totalCarrinho > 0
+                                ? `Carrinho com ${totalCarrinho} ${totalCarrinho === 1 ? "item" : "itens"}`
+                                : "Carrinho vazio"
+                        }
+                    >
                         <ShoppingCartOutlined fontSize="large" />
+
+                        {totalCarrinho > 0 && (
+                            <span className="absolute -right-2 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[11px] font-bold leading-none text-(--primary) shadow">
+                                {totalCarrinho > 99 ? "99+" : totalCarrinho}
+                            </span>
+                        )}
                     </div>
                     <div className="min-w-0">
                         {carregando ? null : me ? (
