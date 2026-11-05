@@ -15,6 +15,13 @@ import {
     LinhaProduto,
 } from "./components/Cards";
 
+// Margem lateral: cresce com a tela para o conteúdo não colar nas bordas.
+const PX = "px-4 md:px-8 xl:px-12";
+const MX = "mx-4 md:mx-8 xl:mx-12";
+// No celular: carrossel horizontal. A partir de md: grade que usa a largura toda.
+const GRADE =
+    "md:grid md:grid-cols-3 md:gap-5 md:overflow-visible lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6";
+
 type Estado =
     | { tipo: "carregando" }
     | { tipo: "erro"; mensagem: string }
@@ -95,19 +102,19 @@ export default function MenuBuild() {
         // Ocupa a largura toda (o <main> tem padding) para os carrosséis irem até a borda.
         // A altura mínima desconta o header (80px) e o padding de baixo do <main>, para o fundo ir até o fim.
         <div className="-mx-2 -mb-2 -mt-2 min-h-[calc(100dvh-5rem)] bg-neutral-50 pb-10 text-neutral-900 sm:-mx-4 sm:-mb-4 sm:-mt-4">
-            <div className="mx-auto w-full max-w-2xl">
-                <div className="px-4 pb-1 pt-5">
+            <div className="w-full">
+                <div className={`${PX} pb-1 pt-5 md:pt-8`}>
                     <p className="text-sm text-neutral-500">
                         {primeiroNome ? `Olá, ${primeiroNome}!` : "Bem-vindo à Marusan!"}
                     </p>
-                    <h1 className="text-2xl font-bold tracking-tight">
+                    <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
                         O que vai pedir hoje?
                     </h1>
                 </div>
 
                 {/* Busca fixa logo abaixo do header (que tem 80px). */}
-                <div className="sticky top-20 z-10 bg-neutral-50/95 px-4 pb-3 pt-3 backdrop-blur">
-                    <label className="flex h-12 items-center gap-2 rounded-full bg-white px-4 shadow-sm ring-1 ring-black/10 focus-within:ring-2 focus-within:ring-(--primary)">
+                <div className={`sticky top-20 z-10 bg-neutral-50/95 ${PX} pb-3 pt-3 backdrop-blur md:flex md:items-center md:gap-4 md:py-4`}>
+                    <label className="flex h-12 items-center gap-2 rounded-full bg-white px-4 shadow-sm ring-1 ring-black/10 focus-within:ring-2 focus-within:ring-(--primary) md:min-w-0 md:max-w-md md:flex-1">
                         <Search className="text-neutral-400" fontSize="small" />
 
                         <input
@@ -132,7 +139,7 @@ export default function MenuBuild() {
                     </label>
 
                     {secoes.length > 1 && (
-                        <nav aria-label="Seções do cardápio" className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
+                        <nav aria-label="Seções do cardápio" className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:mt-0 md:shrink-0 md:overflow-visible md:px-0">
                             {secoes.map((secao) => (
                                 <a
                                     key={secao.id}
@@ -172,7 +179,7 @@ export default function MenuBuild() {
                 )}
 
                 {filtrado && (
-                    <div className="flex flex-col gap-7 pt-2">
+                    <div className="flex flex-col gap-7 pt-2 md:gap-10 md:pt-4">
                         {filtrado.promocoes.length > 0 && (
                             <Secao id="promocoes" titulo="Promoções" subtitulo="Por tempo limitado">
                                 <Carrossel>
@@ -195,7 +202,7 @@ export default function MenuBuild() {
 
                         {filtrado.produtos.length > 0 && (
                             <Secao id="cardapio" titulo="Cardápio">
-                                <ul className="mx-4 divide-y divide-neutral-200 rounded-2xl bg-white px-4 ring-1 ring-black/5">
+                                <ul className={`${MX} divide-y divide-neutral-200 rounded-2xl bg-white px-4 ring-1 ring-black/5 md:divide-y-0 md:bg-transparent md:px-0 md:ring-0 ${GRADE}`}>
                                     {filtrado.produtos.map((item) => (
                                         <li key={item.id}>
                                             <LinhaProduto item={item} />
@@ -226,8 +233,8 @@ function Secao({
         // scroll-mt: ao pular pelo atalho, o título não fica escondido atrás do header + busca.
         // 208px = header (80) + busca e atalhos fixos (~116) + folga.
         <section id={id} aria-labelledby={`${id}-titulo`} className="scroll-mt-52">
-            <div className="mb-3 px-4">
-                <h2 id={`${id}-titulo`} className="text-lg font-bold">
+            <div className={`mb-3 ${PX} md:mb-4`}>
+                <h2 id={`${id}-titulo`} className="text-lg font-bold md:text-xl">
                     {titulo}
                 </h2>
                 {subtitulo && <p className="text-xs text-neutral-500">{subtitulo}</p>}
@@ -240,7 +247,7 @@ function Secao({
 
 function Carrossel({ children }: { children: React.ReactNode }) {
     return (
-        <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-2 [scrollbar-width:none]">
+        <div className={`flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 ${PX} pb-2 [scrollbar-width:none] md:pb-0 ${GRADE}`}>
             {children}
         </div>
     );
@@ -248,18 +255,19 @@ function Carrossel({ children }: { children: React.ReactNode }) {
 
 function Carregando() {
     return (
-        <div className="flex flex-col gap-7 pt-2" aria-busy="true" aria-label="Carregando cardápio">
+        <div className="flex flex-col gap-7 pt-2 md:gap-10 md:pt-4" aria-busy="true" aria-label="Carregando cardápio">
             {[0, 1].map((secao) => (
                 <div key={secao}>
-                    <div className="mx-4 mb-3 h-5 w-32 animate-pulse rounded bg-neutral-200" />
-                    <div className="flex gap-3 overflow-hidden px-4">
-                        <CardEsqueleto />
-                        <CardEsqueleto />
+                    <div className={`${MX} mb-3 h-5 w-32 animate-pulse rounded bg-neutral-200`} />
+                    <div className={`flex gap-3 overflow-hidden ${PX} ${GRADE}`}>
+                        {[0, 1, 2, 3, 4, 5].map((i) => (
+                            <CardEsqueleto key={i} />
+                        ))}
                     </div>
                 </div>
             ))}
 
-            <div className="mx-4 rounded-2xl bg-white px-4 ring-1 ring-black/5">
+            <div className={`${MX} rounded-2xl bg-white px-4 ring-1 ring-black/5 md:hidden`}>
                 <LinhaEsqueleto />
                 <LinhaEsqueleto />
             </div>
@@ -277,7 +285,7 @@ function Aviso({
     acao?: { label: string; onClick: () => void };
 }) {
     return (
-        <div className="mx-4 mt-6 flex flex-col items-center gap-2 rounded-2xl bg-white px-6 py-10 text-center ring-1 ring-black/5">
+        <div className={`${MX} mt-6 flex flex-col items-center gap-2 rounded-2xl bg-white px-6 py-10 text-center ring-1 ring-black/5 md:mx-auto md:max-w-lg`}>
             <h2 className="font-semibold">{titulo}</h2>
             <p className="text-sm text-neutral-500">{texto}</p>
 
