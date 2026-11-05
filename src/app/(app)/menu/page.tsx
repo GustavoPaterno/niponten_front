@@ -1,5 +1,5 @@
-export default function MenuPage(){
-    return (
-        <h1>Menu</h1>
-    )
+import MenuBuild from "@/src/features/menu/MenuBuild";
+
+export default function MenuPage() {
+    return <MenuBuild />;
 }
