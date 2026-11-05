@@ -1,7 +1,7 @@
-import type { SizeResponse } from "nippon-ten";
+import type { SizeResponse } from "@joao.sumi/nippon-ten";
 
 import { api } from "@/src/lib/api";
-import { unwrap } from "@/src/lib/http";
+import { unwrap, unwrapTodas } from "@/src/lib/http";
 
 export interface Tamanho {
     id: number;
@@ -16,7 +16,7 @@ function toTamanho(response: SizeResponse): Tamanho {
 }
 
 export async function listarTamanhos(): Promise<Tamanho[]> {
-    const lista = await unwrap(api.size.sizesGet());
+    const lista = await unwrapTodas((page, size) => api.size.sizesGet(page, size));
 
     return (lista ?? []).map(toTamanho);
 }

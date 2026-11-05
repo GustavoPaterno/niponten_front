@@ -1,7 +1,7 @@
-import type { IngredientResponse } from "nippon-ten";
+import type { IngredientResponse } from "@joao.sumi/nippon-ten";
 
 import { api } from "@/src/lib/api";
-import { unwrap, unwrapVoid } from "@/src/lib/http";
+import { unwrap, unwrapTodas, unwrapVoid } from "@/src/lib/http";
 
 export type IngredienteStatus = "ACTIVE" | "OUT_OF_STOCK";
 
@@ -48,7 +48,7 @@ function toRequest(input: IngredienteInput, imageUrl: string | null) {
 }
 
 export async function listarIngredientes(): Promise<Ingrediente[]> {
-    const lista = await unwrap(api.ingredient.ingredientsGet());
+    const lista = await unwrapTodas((page, size) => api.ingredient.ingredientsGet(page, size));
 
     return (lista ?? []).map(toIngrediente);
 }

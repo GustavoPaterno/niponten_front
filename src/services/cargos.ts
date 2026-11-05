@@ -1,7 +1,7 @@
-import type { InternalPermission, InternalRoleResponse } from "nippon-ten";
+import type { InternalPermission, InternalRoleResponse } from "@joao.sumi/nippon-ten";
 
 import { api } from "@/src/lib/api";
-import { unwrap } from "@/src/lib/http";
+import { unwrap, unwrapTodas } from "@/src/lib/http";
 
 export type Permissao = InternalPermission;
 
@@ -12,6 +12,7 @@ export const PERMISSOES: { valor: Permissao; label: string }[] = [
     { valor: "MANAGE_PRODUCTS", label: "Produtos" },
     { valor: "MANAGE_INGREDIENTS", label: "Ingredientes" },
     { valor: "MANAGE_PROMOTIONS", label: "Promoções" },
+    { valor: "MANAGE_ORDERS", label: "Pedidos" },
 ];
 
 export function labelPermissao(permissao: Permissao): string {
@@ -65,7 +66,7 @@ function toCargo(response: InternalRoleResponse): Cargo {
 }
 
 export async function listarCargos(): Promise<Cargo[]> {
-    const lista = await unwrap(api.internalRole.internalRolesGet());
+    const lista = await unwrapTodas((page, size) => api.internalRole.internalRolesGet(page, size));
 
     return (lista ?? []).map(toCargo);
 }
