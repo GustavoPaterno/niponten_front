@@ -1,5 +1,5 @@
 import { api } from "@/src/lib/api";
-import { unwrap } from "@/src/lib/http";
+import { unwrap, unwrapTodas } from "@/src/lib/http";
 
 import {
     labelPermissao,
@@ -41,8 +41,8 @@ export interface NovoUsuarioInternoInput extends UsuarioInternoInput {
 
 export async function listarUsuariosInternos(): Promise<UsuarioInterno[]> {
     const [internos, usuarios, cargos] = await Promise.all([
-        unwrap(api.internal.internalGet()),
-        unwrap(api.user.usersGet()),
+        unwrapTodas((page, size) => api.internal.internalGet(page, size)),
+        unwrapTodas((page, size) => api.user.usersGet(page, size)),
         listarCargos().catch(() => []),
     ]);
 

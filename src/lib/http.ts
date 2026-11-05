@@ -152,6 +152,14 @@ export function criarApiError(status: number, error: unknown): ApiError {
         return new ApiError(400, traduzir(mensagem));
     }
 
+    // 502: o proxy /backend não alcançou o backend (fora do ar).
+    if (status === 502) {
+        return new ApiError(
+            502,
+            "Não foi possível conectar ao servidor. Tente novamente em instantes."
+        );
+    }
+
     if (status >= 500) {
         return new ApiError(
             status,
@@ -199,6 +207,39 @@ export async function unwrapVoid(
     requisicao: PromiseLike<SdkResult<unknown>>
 ): Promise<void> {
     await executar(requisicao);
+}
+
+interface Pagina<T> {
+    content?: T[];
+    totalPages?: number;
+}
+
+// O backend devolve no máximo 100 itens por página.
+const TAMANHO_PAGINA = 100;
+
+/**
+ * Busca todas as páginas de uma listagem paginada do backend e junta os itens.
+ * A primeira página diz quantas existem; as demais são buscadas em paralelo.
+ *
+ * Uso: `unwrapTodas((page, size) => api.product.productsGet(page, size))`
+ */
+export async function unwrapTodas<T>(
+    buscarPagina: (page: number, size: number) => PromiseLike<SdkResult<Pagina<T>>>
+): Promise<T[]> {
+    const primeira = await unwrap(buscarPagina(0, TAMANHO_PAGINA));
+    const totalPaginas = primeira?.totalPages ?? 1;
+
+    if (totalPaginas <= 1) {
+        return primeira?.content ?? [];
+    }
+
+    const resto = await Promise.all(
+        Array.from({ length: totalPaginas - 1 }, (_, i) =>
+            unwrap(buscarPagina(i + 1, TAMANHO_PAGINA))
+        )
+    );
+
+    return [primeira, ...resto].flatMap((pagina) => pagina?.content ?? []);
 }
 
 /** Mensagem pronta para exibir ao usuário a partir de qualquer erro capturado. */

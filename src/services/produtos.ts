@@ -1,10 +1,10 @@
 import type {
     ProductDetailResponse,
     ProductResponse,
-} from "nippon-ten";
+} from "@joao.sumi/nippon-ten";
 
 import { api } from "@/src/lib/api";
-import { unwrap, unwrapVoid } from "@/src/lib/http";
+import { unwrap, unwrapTodas, unwrapVoid } from "@/src/lib/http";
 
 import type { Ingrediente } from "./ingredientes";
 import { toIngrediente } from "./ingredientes";
@@ -119,9 +119,9 @@ function montarProduto(
  */
 export async function listarProdutos(): Promise<Produto[]> {
     const [produtos, ingredientes, tamanhos] = await Promise.all([
-        unwrap(api.product.productsGet()),
-        unwrap(api.ingredient.ingredientsGet()),
-        unwrap(api.size.sizesGet()),
+        unwrapTodas((page, size) => api.product.productsGet(page, size)),
+        unwrapTodas((page, size) => api.ingredient.ingredientsGet(page, size)),
+        unwrapTodas((page, size) => api.size.sizesGet(page, size)),
     ]);
 
     const mapaIngredientes = new Map<number, Ingrediente>(
@@ -186,14 +186,16 @@ export async function atualizarProduto(
     const idsDesejados = new Set(input.ingredientIds);
     const idsAtuais = new Set(atual.ingredientes.map((i) => i.ingredientId));
 
-    for (const ingredientId of input.ingredientIds) {
-        if (!idsAtuais.has(ingredientId)) {
-            await unwrap(
-                api.product.productsProductIdIngredientsPost(atual.id, {
-                    ingredientId,
-                })
-            );
-        }
+    // O backend recebe os ingredientes novos em lote, numa chamada só.
+    const novos = input.ingredientIds.filter((id) => !idsAtuais.has(id));
+
+    if (novos.length > 0) {
+        await unwrap(
+            api.product.productsProductIdIngredientsPost(
+                atual.id,
+                novos.map((ingredientId) => ({ ingredientId }))
+            )
+        );
     }
 
     for (const existente of atual.ingredientes) {

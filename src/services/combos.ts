@@ -1,7 +1,7 @@
-import type { ComboResponse } from "nippon-ten";
+import type { ComboResponse } from "@joao.sumi/nippon-ten";
 
 import { api } from "@/src/lib/api";
-import { unwrap, unwrapVoid } from "@/src/lib/http";
+import { unwrap, unwrapTodas, unwrapVoid } from "@/src/lib/http";
 
 export type ComboStatus = "ACTIVE" | "INACTIVE";
 
@@ -60,8 +60,8 @@ function montarCombo(
 /** Lista combos com os nomes dos produtos (o GET /combos não traz os produtos). */
 export async function listarCombos(): Promise<Combo[]> {
     const [combos, produtos] = await Promise.all([
-        unwrap(api.combo.combosGet()),
-        unwrap(api.product.productsGet()),
+        unwrapTodas((page, size) => api.combo.combosGet(undefined, page, size)),
+        unwrapTodas((page, size) => api.product.productsGet(page, size)),
     ]);
 
     const nomes = new Map<number, string>(
@@ -102,7 +102,7 @@ export async function criarCombo(input: ComboInput): Promise<void> {
     await unwrap(
         api.combo.combosPost({
             combo: toRequest(input, null),
-            products: input.productIds.map((productId) => ({ productId })),
+            products: input.productIds.map((productId) => ({ productId, quantity: 1 })),
         })
     );
 }
@@ -129,7 +129,7 @@ export async function atualizarCombo(
     for (const productId of input.productIds) {
         if (!existentes.has(productId)) {
             await unwrap(
-                api.combo.combosComboIdProductsPost(atual.id, { productId })
+                api.combo.combosComboIdProductsPost(atual.id, { productId, quantity: 1 })
             );
         }
     }

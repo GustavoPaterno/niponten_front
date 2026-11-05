@@ -1,5 +1,7 @@
 import Image from "next/image";
 
+import { urlDeImagem } from "@/src/lib/imagem";
+
 const FALLBACK = "/images/marusan-logo.jpg";
 
 interface ThumbProps {
@@ -10,7 +12,7 @@ interface ThumbProps {
 export default function Thumb({ src }: ThumbProps) {
     return (
         <Image
-            src={src || FALLBACK}
+            src={urlDeImagem(src) ?? FALLBACK}
             alt=""
             width={40}
             height={40}
