@@ -9,7 +9,16 @@ export type ComboStatus = "ACTIVE" | "INACTIVE";
 export interface ComboProduto {
     id: number;
     productId: number;
+    /** Id da associação produto + tamanho (ProductSize). `null` quando o produto não tem tamanhos. */
+    productSizeId: number | null;
     name: string;
+}
+
+/** Um produto do combo e o tamanho escolhido. */
+export interface ComboItemInput {
+    productId: number;
+    /** Obrigatório no backend quando o produto tem tamanhos. */
+    productSizeId: number | null;
 }
 
 export interface Combo {
@@ -33,7 +42,7 @@ export interface ComboInput {
     status: ComboStatus;
     startDate?: string;
     endDate?: string;
-    productIds: number[];
+    itens: ComboItemInput[];
 }
 
 /** Mínimo de produtos que o backend exige em um combo. */
@@ -79,11 +88,21 @@ export async function listarCombos(): Promise<Combo[]> {
                 (associacoes ?? []).map((a) => ({
                     id: a.id as number,
                     productId: a.productId as number,
+                    productSizeId: a.productSizeId ?? null,
                     name: nomes.get(a.productId as number) ?? "—",
                 }))
             );
         })
     );
+}
+
+// Cada produto entra uma vez no combo (quantidade 1).
+function toItemRequest(item: ComboItemInput) {
+    return {
+        productId: item.productId,
+        productSizeId: item.productSizeId ?? undefined,
+        quantity: 1,
+    };
 }
 
 function toRequest(input: ComboInput, imageUrl: string | null) {
@@ -102,7 +121,7 @@ export async function criarCombo(input: ComboInput): Promise<void> {
     await unwrap(
         api.combo.combosPost({
             combo: toRequest(input, null),
-            products: input.productIds.map((productId) => ({ productId, quantity: 1 })),
+            products: input.itens.map(toItemRequest),
         })
     );
 }
@@ -123,13 +142,24 @@ export async function atualizarCombo(
         api.combo.combosIdPut(atual.id, toRequest(input, atual.imageUrl))
     );
 
-    const desejados = new Set(input.productIds);
-    const existentes = new Set(atual.produtos.map((p) => p.productId));
+    const desejados = new Map(input.itens.map((item) => [item.productId, item]));
+    const existentes = new Map(atual.produtos.map((p) => [p.productId, p]));
 
-    for (const productId of input.productIds) {
-        if (!existentes.has(productId)) {
+    for (const item of input.itens) {
+        const existente = existentes.get(item.productId);
+
+        if (!existente) {
             await unwrap(
-                api.combo.combosComboIdProductsPost(atual.id, { productId, quantity: 1 })
+                api.combo.combosComboIdProductsPost(atual.id, toItemRequest(item))
+            );
+        } else if (existente.productSizeId !== item.productSizeId) {
+            // Mesmo produto, outro tamanho: atualiza a associação em vez de remover e recriar.
+            await unwrap(
+                api.combo.combosComboIdProductsComboProductIdPut(
+                    atual.id,
+                    existente.id,
+                    toItemRequest(item)
+                )
             );
         }
     }
@@ -161,7 +191,7 @@ export async function alterarStatusCombo(
                     status,
                     startDate: combo.startDate ?? undefined,
                     endDate: combo.endDate ?? undefined,
-                    productIds: [],
+                    itens: [],
                 },
                 combo.imageUrl
             )

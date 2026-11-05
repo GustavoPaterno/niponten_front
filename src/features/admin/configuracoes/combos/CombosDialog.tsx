@@ -32,8 +32,13 @@ import {
     MINIMO_PRODUTOS_COMBO,
     type Combo,
     type ComboInput,
+    type ComboItemInput,
 } from "@/src/services/combos";
-import { listarProdutos, type Produto } from "@/src/services/produtos";
+import {
+    listarProdutos,
+    type Produto,
+    type ProdutoTamanho,
+} from "@/src/services/produtos";
 
 interface CombosDialogProps {
     open: boolean;
@@ -74,6 +79,12 @@ export default function CombosDialog({
     );
 }
 
+interface ProdutoSelecionado {
+    produto: Produto;
+    tamanho: ProdutoTamanho | undefined;
+    item: ComboItemInput;
+}
+
 interface CombosFormProps {
     combo: Combo | null;
     onClose: () => void;
@@ -90,9 +101,14 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
         toDatetimeInput(combo?.startDate)
     );
     const [dataFim, setDataFim] = useState(toDatetimeInput(combo?.endDate));
-    const [productIds, setProductIds] = useState<number[]>(
-        () => combo?.produtos.map((p) => p.productId) ?? []
+    const [itens, setItens] = useState<ComboItemInput[]>(
+        () =>
+            combo?.produtos.map((p) => ({
+                productId: p.productId,
+                productSizeId: p.productSizeId,
+            })) ?? []
     );
+    const productIds = itens.map((item) => item.productId);
 
     const [catalogoProdutos, setCatalogoProdutos] = useState<Produto[]>([]);
     const [carregando, setCarregando] = useState(true);
@@ -130,16 +146,48 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
     }, []);
 
     const toggleProduto = (id: number) => {
-        setProductIds((atuais) =>
-            atuais.includes(id)
-                ? atuais.filter((atual) => atual !== id)
-                : [...atuais, id]
+        setItens((atuais) => {
+            if (atuais.some((item) => item.productId === id)) {
+                return atuais.filter((item) => item.productId !== id);
+            }
+
+            // Com um tamanho só (ativo), ele já vem escolhido.
+            const produto = catalogoProdutos.find((p) => p.id === id);
+            const ativos = produto?.tamanhos.filter((t) => t.status === "ACTIVE") ?? [];
+
+            return [
+                ...atuais,
+                { productId: id, productSizeId: ativos.length === 1 ? ativos[0].id : null },
+            ];
+        });
+    };
+
+    const escolherTamanho = (productId: number, productSizeId: number) => {
+        setItens((atuais) =>
+            atuais.map((item) =>
+                item.productId === productId ? { ...item, productSizeId } : item
+            )
         );
     };
 
-    const produtosSelecionados = productIds
-        .map((id) => catalogoProdutos.find((p) => p.id === id))
-        .filter((p): p is Produto => Boolean(p));
+    const produtosSelecionados: ProdutoSelecionado[] = itens.flatMap((item) => {
+        const produto = catalogoProdutos.find((p) => p.id === item.productId);
+        const tamanho = produto?.tamanhos.find((t) => t.id === item.productSizeId);
+
+        return produto ? [{ produto, tamanho, item }] : [];
+    });
+
+    // O backend exige o tamanho de todo produto que tem tamanhos.
+    const semTamanho = (produto: Produto, item: ComboItemInput) =>
+        produto.tamanhos.length > 0 && item.productSizeId === null;
+    const faltaTamanho = produtosSelecionados.some(({ produto, item }) =>
+        semTamanho(produto, item)
+    );
+    // Quanto os itens custariam comprados separadamente, para comparar com o preço do combo.
+    const somaSeparados = produtosSelecionados.reduce(
+        (total, { tamanho }) => total + (tamanho?.price ?? 0),
+        0
+    );
 
     const precoNumero = parsePreco(preco);
     const nomeInvalido = nome.trim() === "";
@@ -152,7 +200,13 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
     const handleSalvar = async () => {
         setTentouSalvar(true);
 
-        if (nomeInvalido || precoInvalido || poucosProdutos || periodoInvalido) {
+        if (
+            nomeInvalido ||
+            precoInvalido ||
+            poucosProdutos ||
+            periodoInvalido ||
+            faltaTamanho
+        ) {
             return;
         }
 
@@ -165,7 +219,7 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
             status: combo?.status ?? "ACTIVE",
             startDate: fromDatetimeInput(dataInicio),
             endDate: fromDatetimeInput(dataFim),
-            productIds,
+            itens,
         });
 
         if (!salvou) {
@@ -335,8 +389,8 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                                 </h3>
 
                                 <p className="mt-1 text-sm text-gray-500">
-                                    Selecione os produtos que fazem parte do
-                                    combo (mínimo de {MINIMO_PRODUTOS_COMBO}).
+                                    Selecione os produtos do combo (mínimo de{" "}
+                                    {MINIMO_PRODUTOS_COMBO}) e o tamanho de cada um.
                                 </p>
                             </div>
 
@@ -434,48 +488,104 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                             </div>
                         ) : (
                             <div className="grid max-h-[420px] grid-cols-1 gap-3 overflow-y-auto pr-1 md:grid-cols-2">
-                                {produtosSelecionados.map((produto) => (
-                                    <div
-                                        key={produto.id}
-                                        className="flex items-center gap-3 rounded-md border border-gray-200 bg-white p-3"
-                                    >
-                                        <Thumb src={produto.imageUrl} />
+                                {produtosSelecionados.map(({ produto, tamanho, item }) => {
+                                    const erroTamanho =
+                                        tentouSalvar && semTamanho(produto, item);
 
-                                        <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                            <TruncatedText className="text-sm font-medium text-gray-800">
-{produto.name}
-</TruncatedText>
-
-                                            <span className="text-xs text-gray-500">
-                                                a partir de{" "}
-                                                {formatCurrency(produto.precoMinimo)}
-                                            </span>
-
-                                            <Chip
-                                                label={
-                                                    produto.status === "ACTIVE"
-                                                        ? "Ativo"
-                                                        : "Inativo"
-                                                }
-                                                size="small"
-                                                sx={{ width: "fit-content" }}
-                                            />
-                                        </div>
-
-                                        <IconButton
-                                            size="small"
-                                            disableRipple
-                                            title="Remover produto"
-                                            onClick={() =>
-                                                toggleProduto(produto.id)
-                                            }
-                                            sx={{ color: "#666" }}
+                                    return (
+                                        <div
+                                            key={produto.id}
+                                            className={`flex flex-col gap-3 rounded-md border bg-white p-3 ${
+                                                erroTamanho ? "border-red-400" : "border-gray-200"
+                                            }`}
                                         >
-                                            <Delete fontSize="small" />
-                                        </IconButton>
-                                    </div>
-                                ))}
+                                            <div className="flex items-center gap-3">
+                                                <Thumb src={produto.imageUrl} />
+
+                                                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                                    <TruncatedText className="text-sm font-medium text-gray-800">
+                                                        {produto.name}
+                                                    </TruncatedText>
+
+                                                    <span className="text-xs text-gray-500">
+                                                        {tamanho
+                                                            ? formatCurrency(tamanho.price)
+                                                            : `a partir de ${formatCurrency(produto.precoMinimo)}`}
+                                                    </span>
+
+                                                    {produto.status !== "ACTIVE" && (
+                                                        <Chip
+                                                            label="Inativo"
+                                                            size="small"
+                                                            sx={{ width: "fit-content" }}
+                                                        />
+                                                    )}
+                                                </div>
+
+                                                <IconButton
+                                                    size="small"
+                                                    disableRipple
+                                                    title="Remover produto"
+                                                    onClick={() => toggleProduto(produto.id)}
+                                                    sx={{ color: "#666" }}
+                                                >
+                                                    <Delete fontSize="small" />
+                                                </IconButton>
+                                            </div>
+
+                                            {produto.tamanhos.length > 0 && (
+                                                <TextField
+                                                    select
+                                                    size="small"
+                                                    label="Tamanho"
+                                                    value={item.productSizeId ?? ""}
+                                                    onChange={(e) =>
+                                                        escolherTamanho(
+                                                            produto.id,
+                                                            Number(e.target.value)
+                                                        )
+                                                    }
+                                                    required
+                                                    error={erroTamanho}
+                                                    helperText={
+                                                        erroTamanho
+                                                            ? "Escolha o tamanho que entra no combo."
+                                                            : undefined
+                                                    }
+                                                >
+                                                    {produto.tamanhos.map((opcao) => (
+                                                        <MenuItem
+                                                            key={opcao.id}
+                                                            value={opcao.id}
+                                                            disabled={
+                                                                opcao.status !== "ACTIVE" &&
+                                                                opcao.id !== item.productSizeId
+                                                            }
+                                                        >
+                                                            {opcao.name} · {formatCurrency(opcao.price)}
+                                                            {opcao.status !== "ACTIVE" && " (inativo)"}
+                                                        </MenuItem>
+                                                    ))}
+                                                </TextField>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
+                        )}
+
+                        {produtosSelecionados.length > 0 && somaSeparados > 0 && (
+                            <p className="mt-3 text-sm text-gray-600">
+                                Comprados separados:{" "}
+                                <strong>{formatCurrency(somaSeparados)}</strong>
+                                {precoNumero > 0 && precoNumero < somaSeparados && (
+                                    <span className="text-green-700">
+                                        {" "}
+                                        · o combo economiza{" "}
+                                        {formatCurrency(somaSeparados - precoNumero)}
+                                    </span>
+                                )}
+                            </p>
                         )}
 
                         {tentouSalvar && poucosProdutos && (
