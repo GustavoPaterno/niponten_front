@@ -8,9 +8,6 @@ import type { AdicionalDetalhe } from "@/src/services/detalheItem";
 
 import Contador from "./Contador";
 
-/** Limite de unidades de cada adicional. */
-export const MAXIMO_POR_ADICIONAL = 5;
-
 interface SecaoAdicionaisProps {
     adicionais: AdicionalDetalhe[];
     quantidades: Record<number, number>;
@@ -100,7 +97,7 @@ export default function SecaoAdicionais({
 
                             <Contador
                                 valor={quantidades[adicional.ingredientId] ?? 0}
-                                max={MAXIMO_POR_ADICIONAL}
+                                max={adicional.maximo}
                                 onChange={(q) => onChange(adicional.ingredientId, q)}
                                 rotulo={adicional.nome}
                                 desabilitado={adicional.esgotado}

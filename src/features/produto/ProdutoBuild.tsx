@@ -232,15 +232,18 @@ function TelaProduto({ produto }: { produto: DetalheProduto }) {
             )}
             </Topo>
 
-            <SecaoAdicionais
-                adicionais={produto.adicionais}
-                quantidades={adicionais}
-                onChange={(ingredientId, q) =>
-                    setAdicionais((atual) => ({ ...atual, [ingredientId]: q }))
-                }
-                aberto={adicionaisAbertos}
-                onAlternar={() => setAdicionaisAbertos((a) => !a)}
-            />
+            {/* Só aparece quando o produto tem adicionais liberados no admin. */}
+            {produto.adicionais.length > 0 && (
+                <SecaoAdicionais
+                    adicionais={produto.adicionais}
+                    quantidades={adicionais}
+                    onChange={(ingredientId, q) =>
+                        setAdicionais((atual) => ({ ...atual, [ingredientId]: q }))
+                    }
+                    aberto={adicionaisAbertos}
+                    onAlternar={() => setAdicionaisAbertos((a) => !a)}
+                />
+            )}
 
             <Observacao valor={observacao} onChange={setObservacao} />
         </Estrutura>

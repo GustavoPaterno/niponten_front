@@ -2,9 +2,11 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ShoppingCartOutlined } from "@mui/icons-material";
 
 import ConfirmDialog from "@/src/components/dialog/ConfirmDialog";
+import { useToast } from "@/src/components/feedback/ToastProvider";
 import {
     limparCarrinho,
     quantidadeTotal,
@@ -14,6 +16,7 @@ import {
 } from "@/src/lib/carrinho";
 import { cotarCarrinho, type Cotacao } from "@/src/services/cotacao";
 
+import FinalizarPedidoDialog from "./components/FinalizarPedidoDialog";
 import LinhaCarrinho from "./components/LinhaCarrinho";
 import ResumoCarrinho from "./components/ResumoCarrinho";
 
@@ -37,6 +40,9 @@ export default function CarrinhoBuild() {
     const itens = useCarrinho();
     const [estado, setEstado] = useState<EstadoCotacao>({ tipo: "conferindo" });
     const [confirmarLimpar, setConfirmarLimpar] = useState(false);
+    const [finalizando, setFinalizando] = useState(false);
+    const router = useRouter();
+    const toast = useToast();
 
     useEffect(() => {
         if (itens.length === 0) {
@@ -145,6 +151,9 @@ export default function CarrinhoBuild() {
                                 total={total}
                                 conferindo={conferindo}
                                 aviso={aviso}
+                                // Só depois de conferir os preços e sem itens recusados pelo backend.
+                                podePedir={!conferindo && qtdComProblema === 0}
+                                onPedir={() => setFinalizando(true)}
                             />
                         </div>
                     </div>
@@ -157,6 +166,19 @@ export default function CarrinhoBuild() {
                     + Adicionar mais itens
                 </Link>
             </div>
+
+            <FinalizarPedidoDialog
+                open={finalizando}
+                itens={itens}
+                total={total}
+                onFechar={() => setFinalizando(false)}
+                onCriado={(pedido) => {
+                    limparCarrinho();
+                    setFinalizando(false);
+                    toast.success(`Pedido #${pedido.codigo} enviado! Acompanhe por aqui.`);
+                    router.push("/pedidos");
+                }}
+            />
 
             <ConfirmDialog
                 open={confirmarLimpar}

@@ -37,7 +37,7 @@ export const MODULOS: ModuloNavegacao[] = [
         itens: [
             { label: "Ver produtos", href: "/menu" },
             { label: "Carrinho", href: "/carrinho" },
-            { label: "Perfil", href: "/perfil" },
+            { label: "Meus pedidos", href: "/pedidos" },
         ],
     },
     {
@@ -109,6 +109,32 @@ export function itemDaRota(pathname: string): ItemNavegacao | undefined {
                 (!item.exato && pathname.startsWith(`${item.href}/`))
         )
         .sort((a, b) => b.href.length - a.href.length)[0];
+}
+
+/**
+ * Caminho para onde voltar depois do login (o `?voltar=` da URL). Só aceita caminhos deste
+ * site: "//outro.site" ou "https://..." viraria um redirecionamento para fora.
+ */
+export function caminhoDeVolta(valor: unknown): string | null {
+    if (
+        typeof valor !== "string" ||
+        !valor.startsWith("/") ||
+        valor.startsWith("//") ||
+        valor.startsWith("/\\") ||
+        valor.startsWith("/login") ||
+        valor.startsWith("/cadastro")
+    ) {
+        return null;
+    }
+
+    return valor;
+}
+
+/** Link para uma tela de acesso (login ou cadastro) que, depois, volta para `voltar`. */
+export function linkDeAcesso(tela: "/login" | "/cadastro", voltar: string | null): string {
+    const destino = caminhoDeVolta(voltar);
+
+    return destino ? `${tela}?voltar=${encodeURIComponent(destino)}` : tela;
 }
 
 /** Para onde levar o usuário depois do login. */

@@ -31,6 +31,18 @@ export interface ProdutoTamanho {
     status: ProdutoStatus;
 }
 
+/**
+ * Adicional liberado para o produto (o cliente só pode pedir estes).
+ * `id` é o id da associação produto + ingrediente adicional (usado para editar/remover).
+ */
+export interface ProdutoAdicional {
+    id: number;
+    ingredientId: number;
+    name: string;
+    maximo: number;
+    status: ProdutoStatus;
+}
+
 export interface Produto {
     id: number;
     name: string;
@@ -39,6 +51,7 @@ export interface Produto {
     status: ProdutoStatus;
     ingredientes: ProdutoIngrediente[];
     tamanhos: ProdutoTamanho[];
+    adicionais: ProdutoAdicional[];
 
     ingredientesTexto: string;
     tamanhosTexto: string;
@@ -51,12 +64,19 @@ export interface ProdutoTamanhoInput {
     status: ProdutoStatus;
 }
 
+export interface ProdutoAdicionalInput {
+    ingredientId: number;
+    maximo: number;
+    status: ProdutoStatus;
+}
+
 export interface ProdutoInput {
     name: string;
     description: string;
     status: ProdutoStatus;
     ingredientIds: number[];
     sizes: ProdutoTamanhoInput[];
+    adicionais: ProdutoAdicionalInput[];
 }
 
 export interface ProdutoDependentes {
@@ -98,6 +118,16 @@ function montarProduto(
         })
     );
 
+    const listaAdicionais: ProdutoAdicional[] = (detalhe.additionalIngredients ?? []).map(
+        (item) => ({
+            id: item.id as number,
+            ingredientId: item.ingredientId as number,
+            name: ingredientes.get(item.ingredientId as number)?.name ?? "—",
+            maximo: item.maximumQuantity ?? 1,
+            status: item.status ?? "ACTIVE",
+        })
+    );
+
     return {
         id: detalhe.id as number,
         name: detalhe.name ?? "",
@@ -106,6 +136,7 @@ function montarProduto(
         status: detalhe.status ?? "ACTIVE",
         ingredientes: listaIngredientes,
         tamanhos: listaTamanhos,
+        adicionais: listaAdicionais,
         ingredientesTexto: listaIngredientes.map((i) => i.name).join(", "),
         tamanhosTexto: listaTamanhos.map((t) => t.name).join(", "),
         precoMinimo: precoMinimo(listaTamanhos),
@@ -143,8 +174,16 @@ export async function listarProdutos(): Promise<Produto[]> {
     return detalhes.map((d) => montarProduto(d, mapaIngredientes, mapaTamanhos));
 }
 
+function paraAdicionalRequest(a: ProdutoAdicionalInput) {
+    return { ingredientId: a.ingredientId, maximumQuantity: a.maximo, status: a.status };
+}
+
+/**
+ * O cadastro do produto não aceita adicionais: eles entram logo depois, em lote, com o id
+ * do produto criado.
+ */
 export async function criarProduto(input: ProdutoInput): Promise<void> {
-    await unwrap(
+    const criado = await unwrap(
         api.product.productsPost({
             product: {
                 name: input.name.trim(),
@@ -157,6 +196,15 @@ export async function criarProduto(input: ProdutoInput): Promise<void> {
             sizes: input.sizes,
         })
     );
+
+    if (input.adicionais.length > 0) {
+        await unwrap(
+            api.product.productsProductIdAdditionalIngredientsPost(
+                criado.id as number,
+                input.adicionais.map(paraAdicionalRequest)
+            )
+        );
+    }
 }
 
 /**
@@ -239,6 +287,57 @@ export async function atualizarProduto(
                 api.product.productsProductIdSizesSizeIdDelete(
                     atual.id,
                     existente.id
+                )
+            );
+        }
+    }
+
+    await sincronizarAdicionais(atual, input.adicionais);
+}
+
+/**
+ * Adicionais também são sub-recurso: novos em lote, alterados um a um, removidos um a um.
+ * O backend não impede repetir um ingrediente já liberado, então só os que ainda não
+ * existem vão no lote.
+ */
+async function sincronizarAdicionais(atual: Produto, desejados: ProdutoAdicionalInput[]) {
+    const atuais = new Map(atual.adicionais.map((a) => [a.ingredientId, a]));
+    const idsDesejados = new Set(desejados.map((a) => a.ingredientId));
+
+    const novos = desejados.filter((a) => !atuais.has(a.ingredientId));
+
+    if (novos.length > 0) {
+        await unwrap(
+            api.product.productsProductIdAdditionalIngredientsPost(
+                atual.id,
+                novos.map(paraAdicionalRequest)
+            )
+        );
+    }
+
+    for (const desejado of desejados) {
+        const existente = atuais.get(desejado.ingredientId);
+
+        if (
+            existente &&
+            (existente.maximo !== desejado.maximo || existente.status !== desejado.status)
+        ) {
+            await unwrap(
+                api.product.productsProductIdAdditionalIngredientsAdditionalIngredientIdPut(
+                    existente.id,
+                    atual.id,
+                    paraAdicionalRequest(desejado)
+                )
+            );
+        }
+    }
+
+    for (const existente of atual.adicionais) {
+        if (!idsDesejados.has(existente.ingredientId)) {
+            await unwrapVoid(
+                api.product.productsProductIdAdditionalIngredientsAdditionalIngredientIdDelete(
+                    existente.id,
+                    atual.id
                 )
             );
         }

@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 
 import Field from "@/src/components/auth/Field";
 import { entrar } from "@/src/lib/auth";
+import { linkDeAcesso } from "@/src/lib/navegacao";
 import { mensagemDeErro } from "@/src/lib/http";
 
-export default function LoginForm() {
+export default function LoginForm({ voltar }: { voltar: string | null }) {
     const router = useRouter();
 
     const [email, setEmail] = useState("");
@@ -24,7 +25,7 @@ export default function LoginForm() {
         setEnviando(true);
 
         try {
-            const destino = await entrar({ email, password });
+            const destino = await entrar({ email, password }, voltar);
             router.push(destino);
         } catch (e) {
             setErro(mensagemDeErro(e));
@@ -96,7 +97,7 @@ export default function LoginForm() {
                     Ainda não tem conta?
                 </p>
                 <Link
-                    href="/cadastro"
+                    href={linkDeAcesso("/cadastro", voltar)}
                     className="flex h-11 items-center justify-center rounded-xl bg-neutral-900 text-base font-black tracking-wide text-white transition-colors hover:bg-black"
                 >
                     CADASTRAR

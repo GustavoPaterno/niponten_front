@@ -1,5 +1,5 @@
 import { ApiError, criarApiError } from "@/src/lib/http";
-import { destinoAposLogin } from "@/src/lib/navegacao";
+import { caminhoDeVolta, destinoAposLogin } from "@/src/lib/navegacao";
 
 /**
  * Autenticação.
@@ -107,14 +107,17 @@ export async function buscarMe(): Promise<Me> {
     return (await response.json()) as Me;
 }
 
-/** Faz login e devolve para onde levar o usuário (a primeira página que ele pode acessar). */
-export async function entrar(input: LoginInput): Promise<string> {
+/**
+ * Faz login e devolve para onde levar o usuário: a página de onde ele veio (`voltar`, ex.: o
+ * carrinho), ou a primeira página que ele pode acessar.
+ */
+export async function entrar(input: LoginInput, voltar?: string | null): Promise<string> {
     await login(input);
 
     try {
         const me = await buscarMe();
 
-        return destinoAposLogin(me);
+        return caminhoDeVolta(voltar) ?? destinoAposLogin(me);
     } catch (erro) {
         await sair();
         throw erro;
