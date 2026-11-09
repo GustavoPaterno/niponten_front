@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { buscarMe, sair as sairDaApi, type Me } from "@/src/lib/auth";
+import { limparCarrinho } from "@/src/lib/carrinho";
 
 interface SessaoContextType {
     /** Usuário logado; `null` quando não há sessão. */
@@ -52,6 +53,8 @@ export default function SessaoProvider({
 
     const sair = useCallback(async () => {
         await sairDaApi();
+        // O carrinho fica no navegador: sem isso, quem entrasse depois veria os itens de quem saiu.
+        limparCarrinho();
         setMe(null);
     }, []);
 
