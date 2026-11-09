@@ -15,6 +15,8 @@ export interface ItemNavegacao {
     label: string;
     href: string;
     permissao?: Permissao;
+    /** Só a própria URL conta (ex.: "/admin" não deve casar com "/admin/configuracoes/..."). */
+    exato?: boolean;
 }
 
 export interface ModuloNavegacao {
@@ -23,6 +25,13 @@ export interface ModuloNavegacao {
 }
 
 export const MODULOS: ModuloNavegacao[] = [
+    {
+        titulo: "Operação",
+        itens: [
+            { label: "Pedidos", href: "/admin", permissao: "MANAGE_ORDERS", exato: true },
+            { label: "Histórico", href: "/admin/historico", permissao: "MANAGE_ORDERS" },
+        ],
+    },
     {
         titulo: "Loja",
         itens: [
@@ -88,11 +97,18 @@ export function modulosVisiveis(me: Me | null): ModuloNavegacao[] {
     })).filter((modulo) => modulo.itens.length > 0);
 }
 
-/** Item da navegação que corresponde à URL (inclui subpáginas, ex.: /produtos/123). */
+/**
+ * Item da navegação que corresponde à URL (inclui subpáginas, ex.: /produtos/123).
+ * Se mais de um casar, vale o de href mais longo (o mais específico).
+ */
 export function itemDaRota(pathname: string): ItemNavegacao | undefined {
-    return MODULOS.flatMap((modulo) => modulo.itens).find(
-        (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
-    );
+    return MODULOS.flatMap((modulo) => modulo.itens)
+        .filter(
+            (item) =>
+                pathname === item.href ||
+                (!item.exato && pathname.startsWith(`${item.href}/`))
+        )
+        .sort((a, b) => b.href.length - a.href.length)[0];
 }
 
 /** Para onde levar o usuário depois do login. */
