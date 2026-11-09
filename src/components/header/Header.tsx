@@ -40,7 +40,8 @@ export default function Header() {
                 </div>
 
                 <div className="flex h-full shrink-0 items-center justify-end gap-4 pr-4 sm:gap-5 sm:pr-6">
-                    <div
+                    <Link
+                        href="/carrinho"
                         className="relative"
                         aria-label={
                             totalCarrinho > 0
@@ -55,7 +56,7 @@ export default function Header() {
                                 {totalCarrinho > 99 ? "99+" : totalCarrinho}
                             </span>
                         )}
-                    </div>
+                    </Link>
                     <div className="min-w-0">
                         {carregando ? null : me ? (
                             <span
