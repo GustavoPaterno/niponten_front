@@ -161,6 +161,47 @@ async function chamarRefresh(refresh: string): Promise<Renovacao> {
 }
 
 /** Repassa a resposta do backend, com os Set-Cookie ajustados e os extras do proxy. */
+const BATIMENTO_SSE_MS = 25_000;
+
+/**
+ * Repasse de Server-Sent Events (ex.: /orders/events). O Next só envia a resposta quando sai o
+ * primeiro pedaço do corpo, e o backend só escreve quando há evento: então manda um comentário
+ * SSE na hora (libera a conexão) e outro a cada 25s (evita que ela caia por inatividade).
+ */
+function fluxoDeEventos(origem: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+    const texto = new TextEncoder();
+    const leitor = origem.getReader();
+    let batimento: ReturnType<typeof setInterval> | undefined;
+
+    return new ReadableStream<Uint8Array>({
+        start(controle) {
+            controle.enqueue(texto.encode(": conectado\n\n"));
+            batimento = setInterval(() => {
+                try {
+                    controle.enqueue(texto.encode(": ping\n\n"));
+                } catch {
+                    clearInterval(batimento);
+                }
+            }, BATIMENTO_SSE_MS);
+        },
+        async pull(controle) {
+            const { done, value } = await leitor.read();
+
+            if (done) {
+                clearInterval(batimento);
+                controle.close();
+            } else {
+                controle.enqueue(value);
+            }
+        },
+        cancel() {
+            // O navegador fechou a conexão: fecha também a do backend.
+            clearInterval(batimento);
+            leitor.cancel().catch(() => {});
+        },
+    });
+}
+
 async function responder(
     resposta: Response,
     caminho: string,
@@ -200,6 +241,14 @@ async function responder(
 
     if (caminho === "/auth/logout") {
         setCookies.push(apagarCookieDoToken());
+    }
+
+    if (resposta.ok && resposta.body && headers.get("content-type")?.includes("text/event-stream")) {
+        corpo = fluxoDeEventos(resposta.body);
+        // Sem compressão nem cache: senão o fluxo fica preso até fechar.
+        headers.set("cache-control", "no-cache, no-transform");
+        headers.set("content-encoding", "none");
+        headers.set("x-accel-buffering", "no");
     }
 
     for (const cookie of setCookies) {

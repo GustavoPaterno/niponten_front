@@ -55,6 +55,18 @@ export default function SidebarProvider({
     >
       {children}
 
+      {/*
+        Fundo escurecido atrás da sidebar: clicar fora dela (inclusive no header) fecha.
+        Fica depois do header no DOM, então o cobre; a sidebar vem depois e fica por cima dele.
+      */}
+      <div
+        aria-hidden="true"
+        onClick={() => setIsOpen(false)}
+        className={`fixed inset-0 z-50 bg-black/40 transition-opacity duration-300 ${
+          isOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      />
+
       {/* Sidebar lateral */}
       <div
         className={`fixed inset-y-0 left-0 z-50 w-[85vw] max-w-[300px] transform bg-white shadow-xl transition-transform duration-300 ease-in-out ${
