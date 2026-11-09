@@ -7,7 +7,7 @@ import { CircularProgress } from "@mui/material";
 import { LockOutlined } from "@mui/icons-material";
 
 import { useSessao } from "@/src/components/auth/SessaoProvider";
-import { destinoAposLogin, itemDaRota, podeAcessar } from "@/src/lib/navegacao";
+import { destinoAposLogin, itemDaRota, linkDeAcesso, podeAcessar } from "@/src/lib/navegacao";
 
 /**
  * Protege as páginas administrativas quando acessadas direto pela URL:
@@ -24,9 +24,10 @@ export default function GuardaDeRota({ children }: { children: React.ReactNode }
 
     useEffect(() => {
         if (semLogin) {
-            router.replace("/login");
+            // Depois de entrar, volta para a página que a pessoa tentou abrir.
+            router.replace(linkDeAcesso("/login", pathname));
         }
-    }, [semLogin, router]);
+    }, [semLogin, router, pathname]);
 
     if (carregando || semLogin) {
         return (

@@ -34,6 +34,10 @@ import type {
 } from "@/src/services/produtos";
 import { listarTamanhos, type Tamanho } from "@/src/services/tamanhos";
 
+import AdicionaisProduto, {
+    maximoInvalido,
+    type AdicionalForm,
+} from "./components/AdicionaisProduto";
 import NovoTamanhoDialog from "./components/NovoTamanhoDialog";
 
 interface ProdutosDialogProps {
@@ -115,6 +119,14 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                   status: t.status,
               }))
             : [tamanhoVazio()]
+    );
+    const [adicionais, setAdicionais] = useState<AdicionalForm[]>(
+        () =>
+            produto?.adicionais.map((a) => ({
+                ingredientId: a.ingredientId,
+                maximo: String(a.maximo),
+                status: a.status,
+            })) ?? []
     );
 
     const [catalogoIngredientes, setCatalogoIngredientes] = useState<
@@ -217,7 +229,12 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
     const handleSalvar = async () => {
         setTentouSalvar(true);
 
-        if (nomeInvalido || semTamanhos || sizes.some(tamanhoInvalido)) {
+        if (
+            nomeInvalido ||
+            semTamanhos ||
+            sizes.some(tamanhoInvalido) ||
+            adicionais.some((a) => maximoInvalido(a.maximo))
+        ) {
             return;
         }
 
@@ -232,6 +249,11 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                 sizeId: s.sizeId as number,
                 price: parsePreco(s.price),
                 status: s.status,
+            })),
+            adicionais: adicionais.map((a) => ({
+                ingredientId: a.ingredientId,
+                maximo: Number(a.maximo),
+                status: a.status,
             })),
         });
 
@@ -257,8 +279,8 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                         </h2>
 
                         <p className="mt-1 text-sm text-gray-500">
-                            Cadastre o produto e configure seus diferentes
-                            tamanhos.
+                            Cadastre o produto e configure seus tamanhos e
+                            adicionais.
                         </p>
                     </div>
 
@@ -702,6 +724,16 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                                 </div>
                             )}
                         </div>
+                    </div>
+
+                    <div className="mt-6 border-t border-gray-200 pt-5">
+                        <AdicionaisProduto
+                            catalogo={catalogoIngredientes}
+                            carregando={carregando}
+                            adicionais={adicionais}
+                            onChange={setAdicionais}
+                            tentouSalvar={tentouSalvar}
+                        />
                     </div>
                 </div>
             </DialogContent>

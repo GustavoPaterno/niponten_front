@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import Field from "@/src/components/auth/Field";
 import { entrar } from "@/src/lib/auth";
+import { linkDeAcesso } from "@/src/lib/navegacao";
 import { cadastrarCliente } from "@/src/services/usuarios";
 import { mensagemDeErro } from "@/src/lib/http";
 
@@ -16,7 +17,7 @@ const VAZIO = {
     password: "",
 };
 
-export default function CadastroForm() {
+export default function CadastroForm({ voltar }: { voltar: string | null }) {
     const router = useRouter();
 
     const [form, setForm] = useState(VAZIO);
@@ -49,7 +50,7 @@ export default function CadastroForm() {
             const destino = await entrar({
                 email: form.email,
                 password: form.password,
-            });
+            }, voltar);
             router.push(destino);
         } catch (e) {
             setErro(mensagemDeErro(e));
@@ -104,7 +105,7 @@ export default function CadastroForm() {
             <div className="flex flex-col gap-3 pt-2">
                 <p className="text-center text-sm text-neutral-600">Já tem conta?</p>
                 <Link
-                    href="/login"
+                    href={linkDeAcesso("/login", voltar)}
                     className="flex h-11 items-center justify-center rounded-xl bg-neutral-900 text-base font-black tracking-wide text-white transition-colors hover:bg-black"
                 >
                     ENTRAR

@@ -23,6 +23,8 @@ export interface IngredienteDetalhe {
 export interface AdicionalDetalhe extends IngredienteDetalhe {
     preco: number;
     esgotado: boolean;
+    /** Máximo de unidades deste adicional no produto (configurado no admin). */
+    maximo: number;
 }
 
 export interface DetalheProduto {
@@ -34,7 +36,7 @@ export interface DetalheProduto {
     tamanhos: TamanhoDetalhe[];
     /** Ingredientes que vêm no produto (o cliente pode remover). */
     ingredientes: IngredienteDetalhe[];
-    /** Todos os ingredientes cadastrados, oferecidos como adicionais. */
+    /** Adicionais liberados para este produto (o backend recusa os outros). */
     adicionais: AdicionalDetalhe[];
     promocao: { id: number; titulo: string; desconto: number } | null;
 }
@@ -149,13 +151,23 @@ export async function buscarDetalheProduto(
             .map((pi) => porIngrediente.get(pi.ingredientId as number))
             .filter((i) => i !== undefined)
             .map((i) => ({ ingredientId: i.id as number, nome: i.name ?? "" })),
-        adicionais: ingredientes
-            .map((i) => ({
-                ingredientId: i.id as number,
-                nome: i.name ?? "",
-                preco: i.price ?? 0,
-                esgotado: i.status !== "ACTIVE",
-            }))
+        adicionais: (produto.additionalIngredients ?? [])
+            .filter((a) => a.status === "ACTIVE")
+            .flatMap((a) => {
+                const ingrediente = porIngrediente.get(a.ingredientId as number);
+
+                return ingrediente
+                    ? [
+                          {
+                              ingredientId: ingrediente.id as number,
+                              nome: ingrediente.name ?? "",
+                              preco: ingrediente.price ?? 0,
+                              esgotado: ingrediente.status !== "ACTIVE",
+                              maximo: a.maximumQuantity ?? 1,
+                          },
+                      ]
+                    : [];
+            })
             .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
         promocao: promocaoValida
             ? {

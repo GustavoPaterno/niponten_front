@@ -7,13 +7,23 @@ interface ResumoCarrinhoProps {
     total: number;
     conferindo: boolean;
     aviso: string | null;
+    /** Pode pedir: carrinho conferido e sem itens recusados. */
+    podePedir: boolean;
+    onPedir: () => void;
 }
 
 /**
  * Subtotal, pontos (ainda não existem: ficam visíveis, mas desabilitados), total e o botão
  * de pedir (desabilitado até o checkout existir).
  */
-export default function ResumoCarrinho({ subtotal, total, conferindo, aviso }: ResumoCarrinhoProps) {
+export default function ResumoCarrinho({
+    subtotal,
+    total,
+    conferindo,
+    aviso,
+    podePedir,
+    onPedir,
+}: ResumoCarrinhoProps) {
     return (
         <section aria-label="Resumo do pedido" className="flex flex-col gap-3">
             <h2 className="hidden text-lg font-bold lg:block">Resumo</h2>
@@ -59,11 +69,11 @@ export default function ResumoCarrinho({ subtotal, total, conferindo, aviso }: R
 
             <button
                 type="button"
-                disabled
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-(--primary) font-semibold text-white opacity-60"
+                onClick={onPedir}
+                disabled={!podePedir}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-(--primary) font-semibold text-white shadow-md shadow-red-600/30 transition hover:bg-[#d92628] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
             >
-                Pedir
-                <span className="rounded-full bg-white/25 px-2 py-0.5 text-xs font-medium">Em breve</span>
+                Pedir · {formatCurrency(total)}
             </button>
         </section>
     );
