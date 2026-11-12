@@ -16,11 +16,11 @@ function Preco({ tamanho }: { tamanho: TamanhoDetalhe }) {
     return (
         <span className="flex items-baseline gap-1.5 whitespace-nowrap">
             {tamanho.precoOriginal !== null && (
-                <span className="text-xs text-neutral-400 line-through">
+                <span className="text-xs text-tinta-suave/70 line-through">
                     {formatCurrency(tamanho.precoOriginal)}
                 </span>
             )}
-            <span className={`font-semibold ${tamanho.precoOriginal !== null ? "text-(--primary)" : ""}`}>
+            <span className={`font-semibold ${tamanho.precoOriginal !== null ? "text-marca" : ""}`}>
                 {formatCurrency(tamanho.preco)}
             </span>
         </span>
@@ -67,7 +67,7 @@ export default function SeletorTamanho({ tamanhos, selecionado, onChange }: Sele
 
     if (tamanhos.length === 1) {
         return (
-            <div className="flex items-center justify-between rounded-xl bg-neutral-50 px-4 py-3 ring-1 ring-black/5">
+            <div className="flex items-center justify-between rounded-xl bg-chapa px-4 py-3 ring-1 ring-black/5">
                 <span className="font-medium">{atual.nome}</span>
                 <Preco tamanho={atual} />
             </div>
@@ -88,7 +88,7 @@ export default function SeletorTamanho({ tamanhos, selecionado, onChange }: Sele
                 aria-expanded={aberto}
                 aria-controls={idLista}
                 className={`flex w-full items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 text-left ring-1 transition ${
-                    aberto ? "ring-2 ring-(--primary)" : "ring-black/15 hover:ring-black/30"
+                    aberto ? "ring-2 ring-marca" : "ring-black/15 hover:ring-black/30"
                 }`}
             >
                 <span className="font-medium">{atual.nome}</span>
@@ -97,7 +97,7 @@ export default function SeletorTamanho({ tamanhos, selecionado, onChange }: Sele
                     <Preco tamanho={atual} />
                     <ExpandMore
                         fontSize="small"
-                        className={`text-neutral-500 transition-transform ${aberto ? "rotate-180" : ""}`}
+                        className={`text-tinta-suave transition-transform ${aberto ? "rotate-180" : ""}`}
                     />
                 </span>
             </button>
@@ -134,11 +134,11 @@ export default function SeletorTamanho({ tamanhos, selecionado, onChange }: Sele
                                             mover(i, -1);
                                         }
                                     }}
-                                    className={`flex w-full items-center gap-3 px-4 py-3 text-left outline-none transition-colors hover:bg-neutral-50 focus-visible:bg-red-50 ${
-                                        marcado ? "bg-red-50/60" : ""
+                                    className={`flex w-full items-center gap-3 px-4 py-3 text-left outline-none transition-colors hover:bg-chapa focus-visible:bg-marca/10 ${
+                                        marcado ? "bg-marca/5" : ""
                                     }`}
                                 >
-                                    <span className="flex w-5 shrink-0 justify-center text-(--primary)">
+                                    <span className="flex w-5 shrink-0 justify-center text-marca">
                                         {marcado && <Check fontSize="small" />}
                                     </span>
                                     <span className={`flex-1 ${marcado ? "font-semibold" : ""}`}>

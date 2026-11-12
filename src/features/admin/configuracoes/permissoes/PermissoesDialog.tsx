@@ -115,11 +115,11 @@ function CargoForm({ cargo, onClose, onSave }: CargoFormProps) {
             >
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <h2 className="text-xl font-semibold text-[#1f2937] sm:text-2xl">
-                            {editando ? "Editar Cargo" : "Criar Cargo"}
+                        <h2 className="font-display text-xl font-bold text-tinta sm:text-2xl">
+                            {editando ? "Editar cargo" : "Criar cargo"}
                         </h2>
 
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-tinta-suave">
                             {editando
                                 ? "Altere o nome e as permissões do cargo."
                                 : "Dê um nome ao cargo e escolha o que ele pode gerenciar."}
@@ -130,7 +130,7 @@ function CargoForm({ cargo, onClose, onSave }: CargoFormProps) {
                         type="button"
                         onClick={onClose}
                         disabled={salvando}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-tinta-suave transition hover:bg-chapa hover:text-tinta"
                     >
                         <Close fontSize="small" />
                     </button>
@@ -156,16 +156,16 @@ function CargoForm({ cargo, onClose, onSave }: CargoFormProps) {
                     />
 
                     <div>
-                        <p className="text-sm font-medium text-gray-700">
+                        <p className="text-sm font-medium text-tinta">
                             Permissões
                         </p>
 
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-tinta-suave">
                             O que quem tem este cargo pode gerenciar no painel.
                         </p>
 
                         {editando && (
-                            <div className="mt-3 flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-gray-700">
+                            <div className="mt-3 flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-tinta">
                                 <InfoOutlined
                                     fontSize="small"
                                     className="text-amber-600"
@@ -201,7 +201,7 @@ function CargoForm({ cargo, onClose, onSave }: CargoFormProps) {
                         </div>
                     </div>
 
-                    <div className="rounded-lg border border-gray-200 p-3">
+                    <div className="rounded-lg border border-black/10 p-3">
                         <FormControlLabel
                             label="Cargo padrão"
                             control={
@@ -213,7 +213,7 @@ function CargoForm({ cargo, onClose, onSave }: CargoFormProps) {
                             }
                         />
 
-                        <p className="ml-8 text-xs text-gray-500">
+                        <p className="ml-8 text-xs text-tinta-suave">
                             Vem selecionado ao criar um novo usuário interno.
                         </p>
                     </div>
@@ -241,7 +241,7 @@ function CargoForm({ cargo, onClose, onSave }: CargoFormProps) {
                             ? "Salvando..."
                             : editando
                               ? "Salvar alterações"
-                              : "Criar Cargo"
+                              : "Criar cargo"
                     }
                     color={ButtonColor.Green}
                     onClick={salvando ? () => undefined : handleSalvar}

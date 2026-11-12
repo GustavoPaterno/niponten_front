@@ -56,7 +56,7 @@ export default function LinhaCarrinho({ item, cotacao, problemas }: LinhaCarrinh
                 <div className="flex items-start justify-between gap-3">
                     <Link href={href} className="min-w-0 font-semibold leading-snug hover:underline">
                         {item.tipo === "COMBO" && (
-                            <span className="mr-1.5 rounded bg-neutral-900 px-1.5 py-0.5 align-middle text-[10px] font-bold uppercase tracking-wide text-white">
+                            <span className="mr-1.5 rounded bg-tinta px-1.5 py-0.5 align-middle text-[10px] font-bold text-white">
                                 Combo
                             </span>
                         )}
@@ -65,17 +65,17 @@ export default function LinhaCarrinho({ item, cotacao, problemas }: LinhaCarrinh
 
                     <div className="shrink-0 text-right">
                         {original && original > total && (
-                            <span className="block text-xs text-neutral-400 line-through">
+                            <span className="block text-xs text-tinta-suave/70 line-through">
                                 {formatCurrency(original)}
                             </span>
                         )}
                         {/* Item recusado pelo backend não entra no total: preço apagado e riscado. */}
                         <span
-                            className={`font-semibold tabular-nums ${
+                            className={`font-display font-bold tabular-nums ${
                                 comProblema
-                                    ? "text-neutral-400 line-through"
+                                    ? "text-tinta-suave/70 line-through"
                                     : original
-                                      ? "text-(--primary)"
+                                      ? "text-marca"
                                       : ""
                             }`}
                         >
@@ -84,7 +84,7 @@ export default function LinhaCarrinho({ item, cotacao, problemas }: LinhaCarrinh
                     </div>
                 </div>
 
-                <dl className="flex flex-col gap-0.5 text-sm text-neutral-500">
+                <dl className="flex flex-col gap-0.5 text-sm text-tinta-suave">
                     {item.tipo === "PRODUCT" && item.tamanho && (
                         <div>
                             <dt className="sr-only">Tamanho</dt>
@@ -101,7 +101,7 @@ export default function LinhaCarrinho({ item, cotacao, problemas }: LinhaCarrinh
 
                     {item.tipo === "PRODUCT" && item.adicionais.length > 0 && (
                         <div>
-                            <dt className="inline font-medium text-(--primary)">Adicionais: </dt>
+                            <dt className="inline font-medium text-marca">Adicionais: </dt>
                             <dd className="inline">
                                 {item.adicionais
                                     .map((a) =>
@@ -123,7 +123,7 @@ export default function LinhaCarrinho({ item, cotacao, problemas }: LinhaCarrinh
                 </dl>
 
                 {comProblema && (
-                    <ul className="mt-1 flex flex-col gap-1 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+                    <ul className="mt-1 flex flex-col gap-1 rounded-lg bg-erro-fundo px-3 py-2 text-sm text-erro ring-1 ring-erro/30">
                         {problemas!.map((problema, i) => (
                             <li key={i} className="flex gap-1.5">
                                 <ErrorOutlined sx={{ fontSize: 16 }} className="mt-0.5 shrink-0" />
@@ -146,7 +146,7 @@ export default function LinhaCarrinho({ item, cotacao, problemas }: LinhaCarrinh
                         type="button"
                         onClick={() => removerDoCarrinho(item.chave)}
                         aria-label={`Remover ${item.nome}`}
-                        className="flex h-9 w-9 items-center justify-center rounded-full text-(--primary) transition hover:bg-red-50 active:bg-red-100"
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-marca transition hover:bg-marca/10 active:bg-marca/20"
                     >
                         <DeleteOutlined fontSize="small" />
                     </button>

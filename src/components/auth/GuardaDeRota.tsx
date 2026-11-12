@@ -32,7 +32,7 @@ export default function GuardaDeRota({ children }: { children: React.ReactNode }
     if (carregando || semLogin) {
         return (
             <div className="flex justify-center py-16">
-                <CircularProgress size={32} sx={{ color: "#EE2C2E" }} />
+                <CircularProgress size={32} sx={{ color: "var(--primary)" }} />
             </div>
         );
     }
@@ -41,23 +41,23 @@ export default function GuardaDeRota({ children }: { children: React.ReactNode }
 
     if (!permitido) {
         return (
-            <div className="mx-auto flex max-w-md flex-col items-center gap-3 px-4 py-16 text-center text-black">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-500">
+            <div className="mx-auto flex max-w-md flex-col items-center gap-3 px-4 py-16 text-center text-tinta">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-marca/10 text-marca">
                     <LockOutlined />
                 </div>
 
-                <h1 className="text-xl font-semibold">
+                <h1 className="font-display text-xl font-extrabold">
                     Você não tem acesso a esta página
                 </h1>
 
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-tinta-suave">
                     Se precisar dela, peça a um administrador para liberar a permissão
                     no seu cargo.
                 </p>
 
                 <Link
-                    href={me ? destinoAposLogin(me) : "/menu"}
-                    className="mt-2 rounded-md bg-red-500 px-4 py-2 text-sm text-white transition-colors hover:bg-red-600"
+                    href={me ? destinoAposLogin(me) : "/"}
+                    className="mt-2 rounded-xl bg-marca px-5 py-2.5 font-display text-sm font-bold text-white transition-colors hover:bg-marca-escura"
                 >
                     Voltar para o início
                 </Link>

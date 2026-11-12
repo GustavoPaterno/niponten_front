@@ -29,10 +29,10 @@ export default function LimitedTextField({
 
     const counterColor =
         length >= maxChars
-            ? "text-red-600"
+            ? "text-erro"
             : length >= maxChars * 0.9
               ? "text-amber-600"
-              : "text-gray-500";
+              : "text-tinta-suave";
 
     return (
         <TextField

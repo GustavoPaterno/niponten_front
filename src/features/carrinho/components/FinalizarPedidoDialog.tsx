@@ -193,9 +193,9 @@ function Formulario({ itens, total, onFechar, onCriado }: FinalizarPedidoDialogP
             <DialogTitle sx={{ px: { xs: 2.5, sm: 3.5 }, pt: 3, pb: 1.5 }}>
                 <div className="flex items-start justify-between gap-3">
                     <div>
-                        <h2 className="text-xl font-bold text-neutral-900">Finalizar pedido</h2>
-                        <p className="mt-0.5 text-sm text-neutral-500">
-                            Total de {formatCurrency(total)} · pagamento na entrega ou no balcão
+                        <h2 className="font-display text-xl font-bold text-tinta">Finalizar pedido</h2>
+                        <p className="mt-0.5 text-sm text-tinta-suave">
+                            Total de {formatCurrency(total)}. Pagamento na entrega ou no balcão.
                         </p>
                     </div>
                     <button
@@ -203,7 +203,7 @@ function Formulario({ itens, total, onFechar, onCriado }: FinalizarPedidoDialogP
                         onClick={onFechar}
                         disabled={enviando}
                         aria-label="Fechar"
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-tinta-suave hover:bg-chapa"
                     >
                         <Close fontSize="small" />
                     </button>
@@ -211,10 +211,10 @@ function Formulario({ itens, total, onFechar, onCriado }: FinalizarPedidoDialogP
             </DialogTitle>
 
             <DialogContent sx={{ px: { xs: 2.5, sm: 3.5 }, py: 2 }}>
-                <div className="flex flex-col gap-6 pt-1 text-neutral-900">
+                <div className="flex flex-col gap-6 pt-1 text-tinta">
                     {/* Tipo de entrega */}
                     <section className="flex flex-col gap-2.5">
-                        <h3 className="font-semibold">Como você quer receber?</h3>
+                        <h3 className="font-display font-bold">Como você quer receber?</h3>
                         <div role="radiogroup" aria-label="Tipo de entrega" className="grid grid-cols-3 gap-2">
                             {TIPOS_ENTREGA.map((t) => {
                                 const Icone = ICONES[t.valor];
@@ -230,8 +230,8 @@ function Formulario({ itens, total, onFechar, onCriado }: FinalizarPedidoDialogP
                                         onClick={() => setTipo(t.valor)}
                                         className={`relative flex flex-col items-center gap-1 rounded-2xl px-2 py-3 text-center transition ${
                                             marcado
-                                                ? "bg-red-50 text-(--primary) ring-2 ring-(--primary)"
-                                                : "bg-white text-neutral-700 ring-1 ring-black/10 hover:ring-black/25"
+                                                ? "bg-marca/10 text-marca ring-2 ring-marca"
+                                                : "bg-white text-tinta ring-1 ring-black/10 hover:ring-black/25"
                                         }`}
                                     >
                                         {marcado && (
@@ -239,7 +239,7 @@ function Formulario({ itens, total, onFechar, onCriado }: FinalizarPedidoDialogP
                                         )}
                                         <Icone />
                                         <span className="text-sm font-semibold">{t.label}</span>
-                                        <span className="hidden text-[11px] leading-tight text-neutral-500 sm:block">
+                                        <span className="hidden text-[11px] leading-tight text-tinta-suave sm:block">
                                             {t.descricao}
                                         </span>
                                     </button>
@@ -247,7 +247,7 @@ function Formulario({ itens, total, onFechar, onCriado }: FinalizarPedidoDialogP
                             })}
                         </div>
                         {tentou && erros.tipo && (
-                            <p className="text-sm text-red-600">Escolha como quer receber o pedido.</p>
+                            <p className="text-sm text-erro">Escolha como quer receber o pedido.</p>
                         )}
                     </section>
 
@@ -255,9 +255,9 @@ function Formulario({ itens, total, onFechar, onCriado }: FinalizarPedidoDialogP
                     {!cliente && (
                         <section className="flex flex-col gap-3">
                             <div className="flex items-baseline justify-between gap-2">
-                                <h3 className="font-semibold">Seus dados</h3>
+                                <h3 className="font-display font-bold">Seus dados</h3>
                                 {!me && (
-                                    <Link href={linkDeAcesso("/login", "/carrinho")} className="text-sm font-medium text-(--primary)">
+                                    <Link href={linkDeAcesso("/login", "/carrinho")} className="text-sm font-medium text-marca">
                                         Já tem conta? Entrar
                                     </Link>
                                 )}
@@ -296,11 +296,11 @@ function Formulario({ itens, total, onFechar, onCriado }: FinalizarPedidoDialogP
                     {/* Endereço (só delivery) */}
                     {delivery && (
                         <section className="flex flex-col gap-3">
-                            <h3 className="font-semibold">Endereço de entrega</h3>
+                            <h3 className="font-display font-bold">Endereço de entrega</h3>
 
                             {cliente && salvos === null && (
                                 <div className="flex justify-center py-4">
-                                    <CircularProgress size={24} sx={{ color: "#EE2C2E" }} />
+                                    <CircularProgress size={24} sx={{ color: "var(--primary)" }} />
                                 </div>
                             )}
 
@@ -393,7 +393,7 @@ function Formulario({ itens, total, onFechar, onCriado }: FinalizarPedidoDialogP
                     type="button"
                     onClick={confirmar}
                     disabled={enviando}
-                    className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-(--primary) font-semibold text-white shadow-md shadow-red-600/30 transition hover:bg-[#d92628] active:scale-[0.99] disabled:opacity-60"
+                    className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-marca px-5 font-display font-bold text-white transition hover:bg-marca-escura active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tinta disabled:opacity-60"
                 >
                     {enviando ? (
                         <>
@@ -401,7 +401,10 @@ function Formulario({ itens, total, onFechar, onCriado }: FinalizarPedidoDialogP
                             Enviando pedido...
                         </>
                     ) : (
-                        <>Confirmar pedido · {formatCurrency(total)}</>
+                        <>
+                            <span>Confirmar pedido</span>
+                            <span className="ml-auto font-extrabold tabular-nums">{formatCurrency(total)}</span>
+                        </>
                     )}
                 </button>
             </DialogActions>
@@ -430,16 +433,16 @@ function OpcaoEndereco({
             onClick={onClick}
             className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-left transition ${
                 marcado
-                    ? "bg-red-50 ring-2 ring-(--primary)"
+                    ? "bg-marca/10 ring-2 ring-marca"
                     : "bg-white ring-1 ring-black/10 hover:ring-black/25"
             }`}
         >
-            <span className={marcado ? "text-(--primary)" : "text-neutral-400"}>{icone}</span>
+            <span className={marcado ? "text-marca" : "text-tinta-suave/70"}>{icone}</span>
             <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">{titulo}</span>
-                {subtitulo && <span className="block truncate text-xs text-neutral-500">{subtitulo}</span>}
+                {subtitulo && <span className="block truncate text-xs text-tinta-suave">{subtitulo}</span>}
             </span>
-            {marcado && <CheckCircle fontSize="small" className="text-(--primary)" />}
+            {marcado && <CheckCircle fontSize="small" className="text-marca" />}
         </button>
     );
 }

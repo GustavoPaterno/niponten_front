@@ -44,7 +44,7 @@ export default function ConfirmDialog({
             {children && (
                 <DialogContent>
                     <div
-                        className="text-sm text-gray-700"
+                        className="text-sm text-tinta"
                         style={{ overflowWrap: "anywhere" }}
                     >
                         {children}

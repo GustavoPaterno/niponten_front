@@ -15,14 +15,14 @@ export default function ImagemItem({ src: original, alt, className = "" }: Image
     const src = urlDeImagem(original);
 
     return (
-        <div className={`relative overflow-hidden bg-neutral-100 ${className}`}>
+        <div className={`relative overflow-hidden bg-chapa ${className}`}>
             <Image
                 src={src || FALLBACK}
                 alt={alt}
                 fill
                 unoptimized
                 sizes="(max-width: 640px) 70vw, 260px"
-                className={src ? "object-cover" : "object-contain p-4 opacity-30 grayscale"}
+                className={src ? "object-cover" : "object-contain p-[18%] opacity-20 grayscale"}
             />
         </div>
     );

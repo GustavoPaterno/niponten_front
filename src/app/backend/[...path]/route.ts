@@ -80,7 +80,7 @@ function ajustarCookieDoBackend(cookie: string): string {
     return partes.join("; ");
 }
 
-function montarHeaders(request: Request, token: string | null): Headers {
+function montarHeaders(request: Request, token: string | null, tokenDoPedido: string | null): Headers {
     const headers = new Headers();
 
     request.headers.forEach((valor, nome) => {
@@ -93,7 +93,31 @@ function montarHeaders(request: Request, token: string | null): Headers {
         headers.set("authorization", `Bearer ${token}`);
     }
 
+    if (tokenDoPedido) {
+        headers.set(ORDER_TOKEN_HEADER, tokenDoPedido);
+    }
+
     return headers;
+}
+
+const ORDER_TOKEN_HEADER = "X-Order-Token";
+const STREAM_DE_PEDIDO = /^\/orders\/\d+\/events$/;
+
+/**
+ * O EventSource do navegador não envia cabeçalhos. No stream de um pedido, o código de
+ * acompanhamento vem em `?token=` e segue para o backend como X-Order-Token (fora da URL).
+ */
+function separarTokenDoPedido(caminho: string, url: URL): { busca: string; tokenDoPedido: string | null } {
+    if (!STREAM_DE_PEDIDO.test(caminho) || !url.searchParams.has("token")) {
+        return { busca: url.search, tokenDoPedido: null };
+    }
+
+    const params = new URLSearchParams(url.search);
+    const tokenDoPedido = params.get("token");
+    params.delete("token");
+    const resto = params.toString();
+
+    return { busca: resto ? `?${resto}` : "", tokenDoPedido };
 }
 
 interface Renovacao {
@@ -265,7 +289,8 @@ async function responder(
 async function repassar(request: Request): Promise<Response> {
     const url = new URL(request.url);
     const caminho = url.pathname.replace(/^\/backend/, "") || "/";
-    const destino = `${BACKEND_URL}${caminho}${url.search}`;
+    const { busca, tokenDoPedido } = separarTokenDoPedido(caminho, url);
+    const destino = `${BACKEND_URL}${caminho}${busca}`;
 
     const temCorpo = request.method !== "GET" && request.method !== "HEAD";
     const corpo = temCorpo ? await request.arrayBuffer() : undefined;
@@ -284,7 +309,7 @@ async function repassar(request: Request): Promise<Response> {
     const chamar = (comToken: string | null) =>
         fetch(destino, {
             method: request.method,
-            headers: montarHeaders(request, comToken),
+            headers: montarHeaders(request, comToken, tokenDoPedido),
             body: corpo,
             redirect: "manual",
         });
@@ -305,7 +330,7 @@ async function repassar(request: Request): Promise<Response> {
     } catch {
         return Response.json(
             { message: "Backend indisponível." },
-            { status: 502, headers: extras.map((c) => ["set-cookie", c]) }
+            { status: 502, headers: extras.map((c): [string, string] => ["set-cookie", c]) }
         );
     }
 

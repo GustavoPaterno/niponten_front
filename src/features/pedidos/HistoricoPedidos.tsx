@@ -47,7 +47,7 @@ function toLinha(p: Pedido): LinhaHistorico {
             minute: "2-digit",
         }),
         tipoTexto: NOME_TIPO[p.tipo],
-        pagamentoTexto: `${p.pagamento ? NOME_PAGAMENTO[p.pagamento] : "—"} · ${p.pago ? "pago" : "não pago"}`,
+        pagamentoTexto: `${p.pagamento ? NOME_PAGAMENTO[p.pagamento] : "—"}, ${p.pago ? "pago" : "não pago"}`,
     };
 }
 
@@ -55,7 +55,7 @@ const colunas: DataTableColumn<LinhaHistorico>[] = [
     {
         field: "codigo",
         headerName: "Pedido",
-        render: (valor) => <span className="font-mono font-semibold">#{valor}</span>,
+        render: (valor) => <span className="font-display font-bold tabular-nums">#{valor}</span>,
     },
     { field: "data", headerName: "Data" },
     { field: "cliente", headerName: "Cliente" },
@@ -94,18 +94,18 @@ export default function HistoricoPedidos() {
     ];
 
     return (
-        <div className="flex flex-col gap-4 p-2 text-neutral-900 sm:gap-5 sm:p-4">
+        <div className="flex flex-col gap-4 p-2 text-tinta sm:gap-5 sm:p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <Link
                         href="/admin"
-                        className="mb-1 inline-flex items-center gap-1 text-sm font-medium text-neutral-500 hover:text-neutral-900"
+                        className="mb-1 inline-flex items-center gap-1 text-sm font-medium text-tinta-suave hover:text-tinta"
                     >
                         <ArrowBack sx={{ fontSize: 16 }} />
                         Pedidos ativos
                     </Link>
-                    <h1 className="text-2xl font-bold tracking-tight">Histórico de pedidos</h1>
-                    <p className="text-sm text-neutral-500">Pedidos concluídos e cancelados</p>
+                    <h1 className="font-display text-2xl font-extrabold tracking-tight">Histórico de pedidos</h1>
+                    <p className="text-sm text-tinta-suave">Pedidos concluídos e cancelados</p>
                 </div>
 
                 <ToggleButtonGroup

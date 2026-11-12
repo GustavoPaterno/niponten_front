@@ -5,7 +5,7 @@ import SidebarLogout from "../components/SidebarLogout";
 
 export default function SidebarBuild() {
   return (
-    <aside className="flex h-full w-full flex-col bg-white text-black">
+    <aside className="flex h-full w-full flex-col bg-white text-tinta">
       <div className="shrink-0 p-3">
         <SidebarHeader />
       </div>
@@ -14,7 +14,7 @@ export default function SidebarBuild() {
         <SidebarModulos />
       </div>
 
-      <div className="flex shrink-0 flex-col gap-3 border-t border-gray-200 p-3">
+      <div className="flex shrink-0 flex-col gap-3 border-t border-black/10 p-3">
         <SidebarTheme />
         <SidebarLogout />
       </div>

@@ -208,11 +208,11 @@ function UsuariosForm({ usuario, onClose, onSave }: UsuariosFormProps) {
             >
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <h2 className="text-xl font-semibold text-[#1f2937] sm:text-2xl">
-                            {editando ? "Editar Usuário" : "Criar Usuário"}
+                        <h2 className="font-display text-xl font-bold text-tinta sm:text-2xl">
+                            {editando ? "Editar usuário" : "Criar usuário"}
                         </h2>
 
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-tinta-suave">
                             {editando
                                 ? "Altere os dados do usuário. E-mail e senha não mudam por aqui."
                                 : "Preencha os dados de acesso e o perfil do novo usuário interno."}
@@ -223,7 +223,7 @@ function UsuariosForm({ usuario, onClose, onSave }: UsuariosFormProps) {
                         type="button"
                         onClick={onClose}
                         disabled={salvando}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-tinta-suave transition hover:bg-chapa hover:text-tinta"
                     >
                         <Close fontSize="small" />
                     </button>
@@ -368,11 +368,11 @@ function UsuariosForm({ usuario, onClose, onSave }: UsuariosFormProps) {
                     )}
 
                     <div>
-                        <p className="text-sm font-medium text-gray-700">
+                        <p className="text-sm font-medium text-tinta">
                             Permissões
                         </p>
 
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-tinta-suave">
                             Além das que o cargo já dá.
                         </p>
 
@@ -420,7 +420,7 @@ function UsuariosForm({ usuario, onClose, onSave }: UsuariosFormProps) {
                             ? "Salvando..."
                             : editando
                               ? "Salvar alterações"
-                              : "Criar Usuário"
+                              : "Criar usuário"
                     }
                     color={ButtonColor.Green}
                     onClick={salvando ? () => undefined : handleSalvar}

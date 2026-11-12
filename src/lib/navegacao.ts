@@ -35,7 +35,7 @@ export const MODULOS: ModuloNavegacao[] = [
     {
         titulo: "Loja",
         itens: [
-            { label: "Ver produtos", href: "/menu" },
+            { label: "Cardápio", href: "/", exato: true },
             { label: "Carrinho", href: "/carrinho" },
             { label: "Meus pedidos", href: "/pedidos" },
         ],
@@ -143,5 +143,5 @@ export function destinoAposLogin(me: Me): string {
         (item) => item.permissao && podeAcessar(me, item)
     );
 
-    return primeiraRestrita?.href ?? "/menu";
+    return primeiraRestrita?.href ?? "/";
 }

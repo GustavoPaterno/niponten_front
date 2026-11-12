@@ -35,14 +35,14 @@ export function formatarTempo(minutos: number): string {
 
 export function corDoTempo(minutos: number): string {
     if (minutos >= ATRASO.atrasado) {
-        return "bg-red-100 text-red-700";
+        return "bg-erro-fundo text-erro";
     }
 
     if (minutos >= ATRASO.atencao) {
         return "bg-amber-100 text-amber-800";
     }
 
-    return "bg-neutral-100 text-neutral-600";
+    return "bg-chapa text-tinta-suave";
 }
 
 interface CardPedidoProps {
@@ -68,8 +68,8 @@ export default function CardPedido({
 
     return (
         <article
-            className={`relative flex flex-col gap-3 rounded-xl bg-white p-3.5 shadow-sm ring-1 transition ${
-                novo ? "ring-2 ring-(--primary) shadow-red-200" : "ring-black/5 hover:ring-black/15"
+            className={`relative flex flex-col gap-3 rounded-2xl bg-white p-3.5 ring-1 transition ${
+                novo ? "shadow-lg shadow-marca/20 ring-2 ring-marca" : "ring-black/5 hover:ring-black/15"
             }`}
         >
             {/* A área de cima abre os detalhes; o botão de baixo avança a etapa. */}
@@ -81,9 +81,9 @@ export default function CardPedido({
             >
                 <div className="flex items-center justify-between gap-2">
                     <span className="flex items-center gap-2">
-                        <span className="font-mono text-base font-bold tracking-tight">#{pedido.codigo}</span>
+                        <span className="font-display text-base font-extrabold tabular-nums">#{pedido.codigo}</span>
                         {novo && (
-                            <span className="animate-pulse rounded-full bg-(--primary) px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                            <span className="animate-pulse rounded-full bg-marca px-2 py-0.5 text-[10px] font-bold text-white">
                                 Novo
                             </span>
                         )}
@@ -98,9 +98,9 @@ export default function CardPedido({
                     </span>
                 </div>
 
-                <p className="truncate font-medium text-neutral-800">{pedido.cliente}</p>
+                <p className="truncate font-medium text-tinta">{pedido.cliente}</p>
 
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-500">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-tinta-suave">
                     <span className="flex items-center gap-1">
                         <IconeTipo sx={{ fontSize: 18 }} />
                         {NOME_TIPO[pedido.tipo]}
@@ -111,13 +111,13 @@ export default function CardPedido({
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
-                    <span className="font-bold tabular-nums">{formatCurrency(pedido.total)}</span>
+                    <span className="font-display text-lg font-extrabold tabular-nums">{formatCurrency(pedido.total)}</span>
                     <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                             pedido.pago ? "bg-green-100 text-green-700" : "bg-amber-50 text-amber-800"
                         }`}
                     >
-                        {pedido.pagamento ? NOME_PAGAMENTO[pedido.pagamento] : "Pagamento"} ·{" "}
+                        {pedido.pagamento ? NOME_PAGAMENTO[pedido.pagamento] : "Pagamento"}{" "}
                         {pedido.pago ? "pago" : "a receber"}
                     </span>
                 </div>
@@ -128,9 +128,9 @@ export default function CardPedido({
                     type="button"
                     onClick={onAvancar}
                     disabled={avancando}
-                    className="flex h-10 items-center justify-center gap-1 rounded-lg bg-(--primary) text-sm font-semibold text-white transition hover:bg-[#d92628] active:scale-[0.98] disabled:opacity-60"
+                    className="flex h-10 items-center justify-center gap-1 rounded-lg bg-marca text-sm font-semibold text-white transition hover:bg-marca-escura active:scale-[0.98] disabled:opacity-60"
                 >
-                    {avancando ? "Atualizando..." : `${proxima.acao} →`}
+                    {avancando ? "Atualizando..." : proxima.acao}
                 </button>
             )}
         </article>

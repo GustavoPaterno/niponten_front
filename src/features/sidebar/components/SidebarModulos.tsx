@@ -69,7 +69,7 @@ function Modulo({ modulo, aberto, ativo, onAlternar }: ModuloProps) {
                 onClick={onAlternar}
                 aria-expanded={aberto}
                 aria-controls={idLista}
-                className="flex w-full cursor-pointer items-center justify-between rounded-md py-1.5 text-left text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
+                className="flex w-full cursor-pointer items-center justify-between rounded-lg py-1.5 text-left font-display text-sm font-bold text-tinta-suave transition-colors hover:text-tinta"
             >
                 <span className="pl-2">{modulo.titulo}</span>
 
@@ -88,7 +88,7 @@ function Modulo({ modulo, aberto, ativo, onAlternar }: ModuloProps) {
                 inert={!aberto}
             >
                 <div className="min-h-0 overflow-hidden">
-                    <ul className="flex flex-col gap-2 pt-1">
+                    <ul className="flex flex-col gap-0.5 pt-1">
                         {modulo.itens.map((item) => {
                             const atual = item.href === ativo;
 
@@ -98,13 +98,12 @@ function Modulo({ modulo, aberto, ativo, onAlternar }: ModuloProps) {
                                         href={item.href}
                                         onClick={closeSidebar}
                                         aria-current={atual ? "page" : undefined}
-                                        className={`flex w-full items-center justify-between rounded-md px-4 py-3 text-left text-sm text-black transition-colors duration-200 hover:bg-red-100 ${
-                                            atual ? "bg-red-100 font-medium" : "bg-gray-100"
+                                        className={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-[15px] transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-marca ${
+                                            atual ? "bg-marca/10 font-bold text-marca" : "text-tinta hover:bg-chapa"
                                         }`}
                                     >
                                         <span>{item.label}</span>
 
-                                        <span className="text-lg text-red-500">›</span>
                                     </Link>
                                 </li>
                             );
