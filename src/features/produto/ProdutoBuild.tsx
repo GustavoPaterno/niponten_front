@@ -162,7 +162,7 @@ function TelaProduto({ produto }: { produto: DetalheProduto }) {
         });
 
         toast.success(`${produto.nome} adicionado ao carrinho.`);
-        router.push("/menu");
+        router.push("/");
     };
 
     return (
@@ -216,8 +216,8 @@ function TelaProduto({ produto }: { produto: DetalheProduto }) {
                                     aria-pressed={removido}
                                     className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-sm transition ${
                                         removido
-                                            ? "bg-neutral-100 text-neutral-400 line-through ring-1 ring-neutral-200"
-                                            : "bg-white text-neutral-800 ring-1 ring-black/15 hover:ring-black/30"
+                                            ? "bg-chapa text-tinta-suave/70 line-through ring-1 ring-black/10"
+                                            : "bg-white text-tinta ring-1 ring-black/15 hover:ring-black/30"
                                     }`}
                                 >
                                     {removido && <Close sx={{ fontSize: 14 }} />}
@@ -270,7 +270,7 @@ function TelaCombo({ combo }: { combo: DetalheCombo }) {
         });
 
         toast.success(`${combo.nome} adicionado ao carrinho.`);
-        router.push("/menu");
+        router.push("/");
     };
 
     return (
@@ -295,20 +295,20 @@ function TelaCombo({ combo }: { combo: DetalheCombo }) {
                             subtitulo={combo.validoAte ? `Válido até ${formatDate(combo.validoAte)}` : null}
                             descricao={combo.descricao}
                         />
-                        <p className="text-2xl font-bold md:text-3xl">{formatCurrency(combo.preco)}</p>
+                        <p className="font-display text-3xl font-extrabold md:text-4xl">{formatCurrency(combo.preco)}</p>
                     </div>
                 }
             >
             <Campo titulo="Neste combo">
-                <ul className="divide-y divide-neutral-100 rounded-xl bg-neutral-50 px-4 ring-1 ring-black/5">
+                <ul className="divide-y divide-black/5 rounded-xl bg-chapa px-4 ring-1 ring-black/5">
                     {combo.itens.map((item, i) => (
                         <li key={i} className="flex items-center gap-3 py-3">
-                            <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-(--primary) ring-1 ring-black/10">
+                            <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-marca ring-1 ring-black/10">
                                 {item.quantidade}x
                             </span>
                             <span className="flex-1">{item.nome}</span>
                             {item.tamanho && (
-                                <span className="text-sm text-neutral-500">{item.tamanho}</span>
+                                <span className="text-sm text-tinta-suave">{item.tamanho}</span>
                             )}
                         </li>
                     ))}
@@ -341,7 +341,7 @@ function useVoltar() {
         if (window.history.length > 1) {
             router.back();
         } else {
-            router.push("/menu");
+            router.push("/");
         }
     };
 }
@@ -363,7 +363,7 @@ function Estrutura({
 
     return (
         // Largura total em qualquer tela. pb-32 deixa espaço para a barra fixa de adicionar.
-        <div className="-mx-2 -mb-2 -mt-2 min-h-[calc(100dvh-5rem)] bg-white pb-32 text-neutral-900 sm:-mx-4 sm:-mb-4 sm:-mt-4">
+        <div className="-mx-2 -mb-2 -mt-2 min-h-[calc(100dvh-4rem)] bg-white pb-32 text-tinta sm:-mx-4 sm:-mb-4 sm:-mt-4">
             {/* Foto: 4:3 no celular; banner de altura fixa a partir de md. */}
             <div className="relative">
                 <ImagemItem
@@ -376,7 +376,7 @@ function Estrutura({
                     type="button"
                     onClick={voltar}
                     aria-label="Voltar"
-                    className="absolute left-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-md backdrop-blur transition hover:bg-white active:scale-95 md:left-8 md:top-6 md:h-11 md:w-11 xl:left-12"
+                    className="absolute left-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-tinta shadow-md backdrop-blur transition hover:bg-white active:scale-95 md:left-8 md:top-6 md:h-11 md:w-11 xl:left-12"
                 >
                     <ArrowBack fontSize="small" />
                 </button>
@@ -408,12 +408,12 @@ function Cabecalho({
     return (
         <div className="flex flex-col gap-1.5">
             {subtitulo && (
-                <p className="text-xs font-semibold uppercase tracking-wide text-(--primary)">
+                <p className="text-sm font-bold text-marca">
                     {subtitulo}
                 </p>
             )}
-            <h1 className="text-2xl font-bold leading-tight tracking-tight md:text-3xl">{titulo}</h1>
-            {descricao && <p className="leading-relaxed text-neutral-600">{descricao}</p>}
+            <h1 className="font-display text-3xl font-extrabold leading-[1.05] tracking-tight md:text-4xl">{titulo}</h1>
+            {descricao && <p className="leading-relaxed text-tinta-suave">{descricao}</p>}
         </div>
     );
 }
@@ -430,8 +430,8 @@ function Campo({
     return (
         <div className="flex flex-col gap-2.5">
             <div className="flex items-baseline justify-between gap-2">
-                <h2 className="font-bold">{titulo}</h2>
-                {dica && <span className="text-xs text-neutral-500">{dica}</span>}
+                <h2 className="font-display text-lg font-bold">{titulo}</h2>
+                {dica && <span className="text-xs text-tinta-suave">{dica}</span>}
             </div>
             {children}
         </div>
@@ -441,8 +441,8 @@ function Campo({
 function Selo({ cor, children }: { cor: "vermelho" | "preto"; children: React.ReactNode }) {
     return (
         <span
-            className={`rounded-full px-3 py-1 text-sm font-bold uppercase tracking-wide text-white shadow-md ${
-                cor === "vermelho" ? "bg-(--primary)" : "bg-neutral-900"
+            className={`rounded-full px-3 py-1 font-display text-sm font-extrabold ${
+                cor === "vermelho" ? "bg-mostarda text-tinta" : "bg-tinta text-white"
             }`}
         >
             {children}
@@ -459,7 +459,7 @@ function Observacao({ valor, onChange }: { valor: string; onChange: (v: string) 
                 rows={2}
                 placeholder="Ex.: bem passado, cortar ao meio..."
                 aria-label="Observação"
-                className="w-full resize-none rounded-xl bg-white px-4 py-3 text-base ring-1 ring-black/15 outline-none placeholder:text-neutral-400 focus:ring-2 focus:ring-(--primary)"
+                className="w-full resize-none rounded-xl bg-white px-4 py-3 text-base ring-1 ring-black/15 outline-none placeholder:text-tinta-suave/70 focus:ring-2 focus:ring-marca"
             />
         </Campo>
     );
@@ -478,7 +478,7 @@ function BarraAdicionar({
 }) {
     return (
         // Fixa no rodapé da tela em qualquer tamanho. No PC, quantidade e botão ficam à direita.
-        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-neutral-200 bg-white px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] md:justify-end md:gap-6 md:px-8 md:py-4 xl:px-12">
+        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-black/10 bg-white px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] md:justify-end md:gap-6 md:px-8 md:py-4 xl:px-12">
             <Contador
                 valor={quantidade}
                 min={1}
@@ -491,10 +491,10 @@ function BarraAdicionar({
             <button
                 type="button"
                 onClick={onAdicionar}
-                className="flex h-12 flex-1 items-center justify-between gap-3 rounded-xl bg-(--primary) px-5 font-semibold text-white shadow-md shadow-red-600/30 transition hover:bg-[#d92628] active:scale-[0.98] md:w-96 md:flex-none"
+                className="flex h-12 flex-1 items-center justify-between gap-3 rounded-xl bg-marca px-5 font-display font-bold text-white transition hover:bg-marca-escura focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tinta active:scale-[0.98] md:w-96 md:flex-none"
             >
                 <span>Adicionar</span>
-                <span className="tabular-nums">{formatCurrency(total)}</span>
+                <span className="font-extrabold tabular-nums">{formatCurrency(total)}</span>
             </button>
         </div>
     );
@@ -503,13 +503,13 @@ function BarraAdicionar({
 function Carregando() {
     return (
         <div className="-mx-2 -mt-2 sm:-mx-4 sm:-mt-4" aria-busy="true" aria-label="Carregando item">
-            <div className="aspect-[4/3] max-h-[48vh] w-full animate-pulse bg-neutral-200 md:aspect-auto md:h-[320px] md:max-h-none lg:h-[380px]" />
+            <div className="aspect-[4/3] max-h-[48vh] w-full animate-pulse bg-black/10 md:aspect-auto md:h-[320px] md:max-h-none lg:h-[380px]" />
             <div className="flex flex-col gap-4 px-4 pt-6 md:max-w-xl md:px-8 xl:px-12">
-                <div className="h-7 w-2/3 animate-pulse rounded bg-neutral-200" />
-                <div className="h-4 w-full animate-pulse rounded bg-neutral-100" />
-                <div className="h-4 w-4/5 animate-pulse rounded bg-neutral-100" />
-                <div className="mt-4 h-12 w-full animate-pulse rounded-xl bg-neutral-200" />
-                <div className="h-14 w-full animate-pulse rounded-xl bg-neutral-100" />
+                <div className="h-7 w-2/3 animate-pulse rounded bg-black/10" />
+                <div className="h-4 w-full animate-pulse rounded bg-chapa" />
+                <div className="h-4 w-4/5 animate-pulse rounded bg-chapa" />
+                <div className="mt-4 h-12 w-full animate-pulse rounded-xl bg-black/10" />
+                <div className="h-14 w-full animate-pulse rounded-xl bg-chapa" />
             </div>
         </div>
     );
@@ -525,23 +525,23 @@ function Aviso({
     acao?: { label: string; onClick: () => void };
 }) {
     return (
-        <div className="mx-auto flex max-w-md flex-col items-center gap-2 px-6 py-16 text-center text-neutral-900">
-            <h1 className="text-lg font-semibold">{titulo}</h1>
-            <p className="text-sm text-neutral-500">{texto}</p>
+        <div className="mx-auto flex max-w-md flex-col items-center gap-2 px-6 py-16 text-center text-tinta">
+            <h1 className="font-display text-xl font-extrabold">{titulo}</h1>
+            <p className="text-sm text-tinta-suave">{texto}</p>
 
             <div className="mt-4 flex gap-3">
                 {acao && (
                     <button
                         type="button"
                         onClick={acao.onClick}
-                        className="rounded-full bg-(--primary) px-5 py-2 text-sm font-semibold text-white"
+                        className="rounded-full bg-marca px-5 py-2 text-sm font-semibold text-white"
                     >
                         {acao.label}
                     </button>
                 )}
                 <Link
-                    href="/menu"
-                    className="rounded-full px-5 py-2 text-sm font-semibold text-neutral-700 ring-1 ring-black/15"
+                    href="/"
+                    className="rounded-full px-5 py-2 text-sm font-semibold text-tinta ring-1 ring-black/15"
                 >
                     Voltar ao cardápio
                 </Link>

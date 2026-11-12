@@ -34,14 +34,14 @@ export default function Contador({
                 onClick={() => onChange(Math.max(min, valor - 1))}
                 disabled={desabilitado || valor <= min}
                 aria-label={`Diminuir ${rotulo}`}
-                className={`${base} text-neutral-600 hover:bg-neutral-100 active:bg-neutral-200`}
+                className={`${base} text-tinta-suave hover:bg-chapa active:bg-black/10`}
             >
                 <Remove fontSize="small" />
             </button>
 
             <span
                 className={`min-w-6 text-center font-semibold tabular-nums ${
-                    valor > 0 ? "text-neutral-900" : "text-neutral-400"
+                    valor > 0 ? "text-tinta" : "text-tinta-suave/70"
                 } ${tamanho === "md" ? "text-lg" : ""}`}
                 aria-live="polite"
             >
@@ -53,7 +53,7 @@ export default function Contador({
                 onClick={() => onChange(Math.min(max, valor + 1))}
                 disabled={desabilitado || valor >= max}
                 aria-label={`Aumentar ${rotulo}`}
-                className={`${base} bg-red-50 text-(--primary) hover:bg-red-100 active:bg-red-200`}
+                className={`${base} bg-marca/10 text-marca hover:bg-marca/20 active:bg-marca/25`}
             >
                 <Add fontSize="small" />
             </button>

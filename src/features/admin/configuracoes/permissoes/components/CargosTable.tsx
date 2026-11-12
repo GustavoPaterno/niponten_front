@@ -57,21 +57,21 @@ export default function CargosTable({
             label: "Editar",
             onClick: onEditar,
             hidden: (cargo) => cargo.reservado,
-            color: "#000000",
+            color: "#1D1B19",
         },
         {
             icon: PauseIcon,
             label: "Desativar",
             onClick: onAlterarStatus,
             hidden: (cargo) => cargo.reservado || !cargo.active,
-            color: "#000000",
+            color: "#1D1B19",
         },
         {
             icon: PlayArrowIcon,
             label: "Ativar",
             onClick: onAlterarStatus,
             hidden: (cargo) => cargo.reservado || cargo.active,
-            color: "#000000",
+            color: "#1D1B19",
         },
     ];
 

@@ -51,19 +51,19 @@ export default function SecaoAdicionais({
                 aria-expanded={aberto}
                 aria-controls={idLista}
                 className={`flex w-full items-center justify-between gap-3 rounded-xl bg-white px-4 py-3.5 text-left ring-1 ring-black/10 transition md:px-6 ${
-                    aberto ? "sticky top-20 z-20 rounded-b-none shadow-md" : "hover:ring-black/20"
+                    aberto ? "sticky top-16 z-20 rounded-b-none shadow-md" : "hover:ring-black/20"
                 }`}
             >
                 <span className="flex flex-col">
-                    <span className="font-bold text-(--primary)">Adicionais</span>
-                    <span className="text-xs text-neutral-500">
+                    <span className="font-display text-lg font-bold">Adicionais</span>
+                    <span className="text-xs text-tinta-suave">
                         {totalUnidades > 0
-                            ? `${totalUnidades} ${totalUnidades === 1 ? "escolhido" : "escolhidos"} · + ${formatCurrency(totalPreco)}`
+                            ? `${totalUnidades} ${totalUnidades === 1 ? "escolhido" : "escolhidos"}, + ${formatCurrency(totalPreco)}`
                             : "Turbine o seu pedido"}
                     </span>
                 </span>
 
-                <span className="flex items-center gap-1 text-sm font-medium text-neutral-600">
+                <span className="flex items-center gap-1 text-sm font-medium text-tinta-suave">
                     {aberto ? "Recolher" : "Ver"}
                     <ExpandMore className={`transition-transform ${aberto ? "rotate-180" : ""}`} />
                 </span>
@@ -73,10 +73,10 @@ export default function SecaoAdicionais({
                 // Um adicional por linha, ocupando a largura toda, em qualquer tela.
                 <ul
                     id={idLista}
-                    className="divide-y divide-neutral-100 rounded-b-xl bg-white px-4 ring-1 ring-black/10 md:px-6"
+                    className="divide-y divide-black/5 rounded-b-xl bg-white px-4 ring-1 ring-black/10 md:px-6"
                 >
                     {adicionais.length === 0 && (
-                        <li className="py-4 text-sm text-neutral-500">
+                        <li className="py-4 text-sm text-tinta-suave">
                             Nenhum adicional disponível no momento.
                         </li>
                     )}
@@ -87,10 +87,10 @@ export default function SecaoAdicionais({
                             className="flex items-center gap-3 py-2.5 md:py-3"
                         >
                             <div className="min-w-0 flex-1">
-                                <p className={`truncate ${adicional.esgotado ? "text-neutral-400" : ""}`}>
+                                <p className={`truncate ${adicional.esgotado ? "text-tinta-suave/70" : ""}`}>
                                     {adicional.nome}
                                 </p>
-                                <p className="text-xs text-neutral-500">
+                                <p className="text-xs text-tinta-suave">
                                     {adicional.esgotado ? "Esgotado" : `+ ${formatCurrency(adicional.preco)}`}
                                 </p>
                             </div>

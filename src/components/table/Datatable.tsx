@@ -225,7 +225,7 @@ export function DataTable<T>({
 
     const errorBlock = error ? (
         <div className="flex flex-col items-center gap-2 py-6">
-            <Typography variant="body2" className="text-red-600">
+            <Typography variant="body2" className="text-erro">
                 {error}
             </Typography>
 
@@ -250,7 +250,7 @@ export function DataTable<T>({
                     size="small"
                     title={action.label}
                     onClick={() => action.onClick(row)}
-                    className="hover:bg-gray-100"
+                    className="hover:bg-chapa"
                     sx={{ color: action.color ?? "inherit" }}
                 >
                     <Icon fontSize="small" />
@@ -261,7 +261,7 @@ export function DataTable<T>({
     return (
         <Box className="flex h-125 w-full flex-col overflow-hidden rounded-xl bg-white shadow-component">
             {/* Header */}
-            <Box className="flex shrink-0 flex-col gap-3 border-b border-gray-200 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+            <Box className="flex shrink-0 flex-col gap-3 border-b border-black/10 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
                 <TextField
                     size="small"
                     placeholder={searchPlaceholder}
@@ -274,7 +274,7 @@ export function DataTable<T>({
                             startAdornment: (
                                 <Search
                                     fontSize="small"
-                                    className="mr-2 text-gray-400"
+                                    className="mr-2 text-tinta-suave/70"
                                 />
                             ),
                         },
@@ -310,21 +310,21 @@ export function DataTable<T>({
             <Box className="min-h-0 flex-1 overflow-auto">
                 <table className="w-full min-w-[720px] border-collapse">
                     <thead className="sticky top-0 z-10">
-                        <tr className="border-b border-gray-200 bg-gray-50">
+                        <tr className="border-b border-black/10 bg-chapa">
                             {columnDef.map((column) => (
                                 <th
                                     key={String(column.field)}
                                     style={{
                                         width: column.width,
                                     }}
-                                    className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold text-gray-500 sm:px-4"
+                                    className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold text-tinta-suave sm:px-4"
                                 >
                                     {column.headerName}
                                 </th>
                             ))}
 
                             {actions.length > 0 && (
-                                <th className="w-24 whitespace-nowrap px-3 py-3 text-right text-xs font-semibold text-gray-500 sm:px-4">
+                                <th className="w-24 whitespace-nowrap px-3 py-3 text-right text-xs font-semibold text-tinta-suave sm:px-4">
                                     Ações
                                 </th>
                             )}
@@ -343,7 +343,7 @@ export function DataTable<T>({
                                 >
                                     <Typography
                                         variant="body2"
-                                        className="text-gray-500"
+                                        className="text-tinta-suave"
                                     >
                                         Carregando...
                                     </Typography>
@@ -372,7 +372,7 @@ export function DataTable<T>({
                                 >
                                     <Typography
                                         variant="body2"
-                                        className="text-gray-500"
+                                        className="text-tinta-suave"
                                     >
                                         {emptyMessage}
                                     </Typography>
@@ -382,7 +382,7 @@ export function DataTable<T>({
                             paginatedData.map((row, rowIndex) => (
                                 <tr
                                     key={rowIndex}
-                                    className=" border-b border-gray-100 transition-colors hover:bg-gray-50"
+                                    className=" border-b border-black/5 transition-colors hover:bg-chapa"
                                 >
                                     {columnDef.map((column) => {
                                         const value =
@@ -396,7 +396,7 @@ export function DataTable<T>({
                                                 style={{
                                                     width: column.width,
                                                 }}
-                                                className="whitespace-nowrap px-3 py-2 text-sm text-gray-700 sm:px-4"
+                                                className="whitespace-nowrap px-3 py-2 text-sm text-tinta sm:px-4"
                                             >
                                                 <TruncatedText maxWidth="16rem">
                                                     {
@@ -429,10 +429,10 @@ export function DataTable<T>({
             </Box>
 
             {/* Footer */}
-            <Box className="flex shrink-0 flex-col gap-2 border-t border-gray-200 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+            <Box className="flex shrink-0 flex-col gap-2 border-t border-black/10 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
                 <Typography
                     variant="body2"
-                    className="text-gray-500"
+                    className="text-tinta-suave"
                 >
                     {sortedData.length === 0
                         ? "0 registros"
@@ -454,7 +454,7 @@ export function DataTable<T>({
 
                     <Typography
                         variant="body2"
-                        className="px-2 text-gray-600"
+                        className="px-2 text-tinta-suave"
                     >
                         {currentPage} / {totalPages}
                     </Typography>

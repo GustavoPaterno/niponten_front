@@ -81,7 +81,7 @@ export default function SidebarProvider({
             type="button"
             onClick={() => setIsOpen(false)}
             aria-label="Fechar menu"
-            className="absolute right-3 top-3 z-10 cursor-pointer text-xl text-black"
+            className="absolute right-3 top-3 z-10 cursor-pointer text-xl text-tinta"
           >
             ×
           </button>

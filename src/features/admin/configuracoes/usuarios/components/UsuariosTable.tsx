@@ -82,14 +82,14 @@ export default function UsuariosTable({
             icon: EditIcon,
             label: "Editar",
             onClick: onEditar,
-            color: "#000000",
+            color: "#1D1B19",
         },
         {
             icon: PersonOffIcon,
             label: "Desativar",
             onClick: onAlterarStatus,
             hidden: (usuario) => !usuario.active,
-            color: "#EE2C2E",
+            color: "var(--erro)",
         },
         {
             icon: HowToRegIcon,

@@ -129,11 +129,11 @@ function IngredientesForm({
             >
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <h2 className="text-xl font-semibold text-[#1f2937] sm:text-2xl">
-                            {editando ? "Editar Ingrediente" : "Criar Ingrediente"}
+                        <h2 className="font-display text-xl font-bold text-tinta sm:text-2xl">
+                            {editando ? "Editar ingrediente" : "Criar ingrediente"}
                         </h2>
 
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-tinta-suave">
                             {editando
                                 ? "Altere as informações do ingrediente."
                                 : "Preencha as informações abaixo para cadastrar um novo ingrediente."}
@@ -144,7 +144,7 @@ function IngredientesForm({
                         type="button"
                         onClick={onClose}
                         disabled={salvando}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-tinta-suave transition hover:bg-chapa hover:text-tinta"
                     >
                         <Close fontSize="small" />
                     </button>
@@ -155,7 +155,7 @@ function IngredientesForm({
             <DialogContent sx={{ px: { xs: 2, sm: 4 }, py: 3 }}>
                 <div className="flex flex-col gap-6 pt-5">
                     <LimitedTextField
-                        label="Nome do Ingrediente"
+                        label="Nome do ingrediente"
                         placeholder="Ex: Queijo"
                         value={nome}
                         onChange={(e) => setNome(e.target.value)}
@@ -200,7 +200,7 @@ function IngredientesForm({
                             },
                             input: {
                                 startAdornment: (
-                                    <span className="mr-2 text-sm text-gray-500">
+                                    <span className="mr-2 text-sm text-tinta-suave">
                                         R$
                                     </span>
                                 ),
@@ -244,7 +244,7 @@ function IngredientesForm({
                             ? "Salvando..."
                             : editando
                               ? "Salvar alterações"
-                              : "Criar Ingrediente"
+                              : "Criar ingrediente"
                     }
                     color={ButtonColor.Green}
                     onClick={salvando ? () => undefined : handleSalvar}

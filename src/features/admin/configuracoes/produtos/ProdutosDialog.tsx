@@ -274,11 +274,11 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
             >
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <h2 className="text-xl font-semibold text-[#1f2937] sm:text-2xl">
-                            {editando ? "Editar Produto" : "Criar Produto"}
+                        <h2 className="font-display text-xl font-bold text-tinta sm:text-2xl">
+                            {editando ? "Editar produto" : "Criar produto"}
                         </h2>
 
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-tinta-suave">
                             Cadastre o produto e configure seus tamanhos e
                             adicionais.
                         </p>
@@ -288,7 +288,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                         type="button"
                         onClick={onClose}
                         disabled={salvando}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-tinta-suave transition hover:bg-chapa hover:text-tinta"
                     >
                         <Close fontSize="small" />
                     </button>
@@ -298,7 +298,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
             <DialogContent sx={{ px: { xs: 2, sm: 4 }, py: 3 }}>
                 <div className="pt-3">
                     {erroCatalogo && (
-                        <div className="mb-6 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                        <div className="mb-6 rounded-md border border-erro/30 bg-erro-fundo p-3 text-sm text-erro">
                             {erroCatalogo} Feche e abra o formulário para tentar
                             novamente.
                         </div>
@@ -306,11 +306,11 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
 
                     <div className="mb-8">
                         <div className="mb-2">
-                            <h3 className="pt-2 text-base font-semibold text-gray-800">
+                            <h3 className="font-display pt-2 text-base font-bold text-tinta">
                                 Informações gerais
                             </h3>
 
-                            <p className="mt-1 text-sm text-gray-500">
+                            <p className="mt-1 text-sm text-tinta-suave">
                                 Essas informações serão utilizadas em todos os
                                 tamanhos do produto.
                             </p>
@@ -318,7 +318,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
 
                         <div className="flex flex-col gap-6 pt-3">
                             <LimitedTextField
-                                label="Nome do Produto"
+                                label="Nome do produto"
                                 placeholder="Ex: Pastel de Carne"
                                 value={nome}
                                 onChange={(e) => setNome(e.target.value)}
@@ -344,16 +344,16 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-5 border-t border-gray-200 pt-2 lg:grid-cols-2 lg:gap-6">
+                    <div className="grid grid-cols-1 gap-5 border-t border-black/10 pt-2 lg:grid-cols-2 lg:gap-6">
                         {/* Ingredientes */}
                         <div className="min-w-0">
                             <div className="mb-5 flex items-start justify-between gap-3">
                                 <div>
-                                    <h3 className="text-base font-semibold text-gray-800">
+                                    <h3 className="font-display text-base font-bold text-tinta">
                                         Ingredientes
                                     </h3>
 
-                                    <p className="mt-1 text-sm text-gray-500">
+                                    <p className="mt-1 text-sm text-tinta-suave">
                                         Selecione os ingredientes do produto.
                                     </p>
                                 </div>
@@ -415,7 +415,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                                         </div>
 
                                         <div className="flex min-w-0 flex-row items-center justify-between gap-3">
-                                            <TruncatedText maxWidth={280} className="text-sm text-gray-700">
+                                            <TruncatedText maxWidth={280} className="text-sm text-tinta">
 {ingrediente.name}
 </TruncatedText>
 
@@ -431,17 +431,17 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                             </Menu>
 
                             {carregando ? (
-                                <div className="flex min-h-[210px] items-center justify-center rounded-md border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-500">
+                                <div className="flex min-h-[210px] items-center justify-center rounded-md border border-dashed border-black/20 bg-chapa text-sm text-tinta-suave">
                                     Carregando ingredientes...
                                 </div>
                             ) : ingredientesSelecionados.length === 0 ? (
-                                <div className="flex min-h-[210px] items-center justify-center rounded-md border border-dashed border-gray-300 bg-gray-50">
+                                <div className="flex min-h-[210px] items-center justify-center rounded-md border border-dashed border-black/20 bg-chapa">
                                     <div className="text-center">
-                                        <p className="text-sm font-medium text-gray-600">
+                                        <p className="text-sm font-medium text-tinta-suave">
                                             Nenhum ingrediente selecionado
                                         </p>
 
-                                        <p className="mt-1 text-xs text-gray-400">
+                                        <p className="mt-1 text-xs text-tinta-suave/70">
                                             Clique em &quot;Gerenciar&quot; para
                                             selecionar ingredientes.
                                         </p>
@@ -453,14 +453,14 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                                         (ingrediente) => (
                                             <div
                                                 key={ingrediente.id}
-                                                className="flex items-center gap-3 rounded-md border border-gray-200 bg-white p-3"
+                                                className="flex items-center gap-3 rounded-md border border-black/10 bg-white p-3"
                                             >
                                                 <Thumb
                                                     src={ingrediente.imageUrl}
                                                 />
 
                                                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                                    <TruncatedText className="text-sm font-medium text-gray-800">
+                                                    <TruncatedText className="text-sm font-medium text-tinta">
 {ingrediente.name}
 </TruncatedText>
 
@@ -502,11 +502,11 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                         <div className="min-w-0">
                             <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                                 <div>
-                                    <h3 className="text-base font-semibold text-gray-800">
+                                    <h3 className="font-display text-base font-bold text-tinta">
                                         Tamanhos
                                     </h3>
 
-                                    <p className="mt-1 text-sm text-gray-500">
+                                    <p className="mt-1 text-sm text-tinta-suave">
                                         Escolha o tamanho e defina o preço.
                                     </p>
                                 </div>
@@ -531,22 +531,22 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
 
                             {semTamanhos ? (
                                 <div
-                                    className={`flex min-h-[210px] items-center justify-center rounded-md border border-dashed bg-gray-50 ${
+                                    className={`flex min-h-[210px] items-center justify-center rounded-md border border-dashed bg-chapa ${
                                         tentouSalvar
-                                            ? "border-red-400"
-                                            : "border-gray-300"
+                                            ? "border-erro"
+                                            : "border-black/20"
                                     }`}
                                 >
                                     <div className="text-center">
-                                        <p className="text-sm font-medium text-gray-600">
+                                        <p className="text-sm font-medium text-tinta-suave">
                                             Nenhum tamanho adicionado
                                         </p>
 
                                         <p
                                             className={`mt-1 text-xs ${
                                                 tentouSalvar
-                                                    ? "text-red-600"
-                                                    : "text-gray-400"
+                                                    ? "text-erro"
+                                                    : "text-tinta-suave/70"
                                             }`}
                                         >
                                             O produto precisa de pelo menos um
@@ -576,10 +576,10 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                                         return (
                                             <div
                                                 key={size.key}
-                                                className="rounded-md border border-gray-200 bg-gray-50 p-4"
+                                                className="rounded-md border border-black/10 bg-chapa p-4"
                                             >
                                                 <div className="mb-3 flex items-center justify-between">
-                                                    <span className="text-sm font-semibold text-gray-700">
+                                                    <span className="text-sm font-semibold text-tinta">
                                                         Tamanho {index + 1}
                                                     </span>
 
@@ -684,7 +684,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                                                                 input: {
                                                                     startAdornment:
                                                                         (
-                                                                            <span className="mr-2 text-sm text-gray-500">
+                                                                            <span className="mr-2 text-sm text-tinta-suave">
                                                                                 R$
                                                                             </span>
                                                                         ),
@@ -726,7 +726,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                         </div>
                     </div>
 
-                    <div className="mt-6 border-t border-gray-200 pt-5">
+                    <div className="mt-6 border-t border-black/10 pt-5">
                         <AdicionaisProduto
                             catalogo={catalogoIngredientes}
                             carregando={carregando}
@@ -758,7 +758,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                             ? "Salvando..."
                             : editando
                               ? "Salvar alterações"
-                              : "Criar Produto"
+                              : "Criar produto"
                     }
                     color={ButtonColor.Green}
                     onClick={salvando || carregando ? () => undefined : handleSalvar}

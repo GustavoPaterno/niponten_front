@@ -37,7 +37,7 @@ export interface EnderecoSalvo {
 
 /**
  * O backend não tem "ponto de referência": ele vai junto do complemento, que é o que aparece no
- * endereço do pedido no painel ("Apto 2 · Ref.: ao lado da padaria").
+ * endereço do pedido no painel ("Apto 2, Ref.: ao lado da padaria").
  */
 function complementoComReferencia(e: EnderecoInput): string | undefined {
     const partes = [
@@ -45,7 +45,7 @@ function complementoComReferencia(e: EnderecoInput): string | undefined {
         e.referencia.trim() ? `Ref.: ${e.referencia.trim()}` : "",
     ].filter(Boolean);
 
-    return partes.length ? partes.join(" · ") : undefined;
+    return partes.length ? partes.join(", ") : undefined;
 }
 
 function paraEnderecoRequest(e: EnderecoInput) {
@@ -63,7 +63,7 @@ export async function listarEnderecos(userId: number): Promise<EnderecoSalvo[]> 
     return (lista ?? []).map((e) => ({
         id: e.id as number,
         resumo: [e.streetAddress, e.number].filter(Boolean).join(", "),
-        detalhe: [e.complement, e.cep ? `CEP ${e.cep}` : ""].filter(Boolean).join(" · "),
+        detalhe: [e.complement, e.cep ? `CEP ${e.cep}` : ""].filter(Boolean).join(", "),
     }));
 }
 

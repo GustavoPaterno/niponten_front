@@ -239,11 +239,11 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
             >
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <h2 className="text-xl font-semibold text-[#1f2937] sm:text-2xl">
-                            {editando ? "Editar Combo" : "Criar Combo"}
+                        <h2 className="font-display text-xl font-bold text-tinta sm:text-2xl">
+                            {editando ? "Editar combo" : "Criar combo"}
                         </h2>
 
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-tinta-suave">
                             Cadastre o combo e configure os produtos que fazem
                             parte dele.
                         </p>
@@ -253,7 +253,7 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                         type="button"
                         onClick={onClose}
                         disabled={salvando}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-tinta-suave transition hover:bg-chapa hover:text-tinta"
                     >
                         <Close fontSize="small" />
                     </button>
@@ -263,7 +263,7 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
             <DialogContent sx={{ px: { xs: 2, sm: 4 }, py: 3 }}>
                 <div className="pt-3">
                     {erroCatalogo && (
-                        <div className="mb-6 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                        <div className="mb-6 rounded-md border border-erro/30 bg-erro-fundo p-3 text-sm text-erro">
                             {erroCatalogo} Feche e abra o formulário para tentar
                             novamente.
                         </div>
@@ -272,11 +272,11 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                     {/* INFORMAÇÕES GERAIS */}
                     <div className="mb-8">
                         <div className="mb-5">
-                            <h3 className="pt-2 text-base font-semibold text-gray-800">
+                            <h3 className="font-display pt-2 text-base font-bold text-tinta">
                                 Informações gerais
                             </h3>
 
-                            <p className="mt-1 text-sm text-gray-500">
+                            <p className="mt-1 text-sm text-tinta-suave">
                                 Configure as informações do combo.
                             </p>
                         </div>
@@ -284,7 +284,7 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                         <div className="flex flex-col gap-6 pt-3">
                             <div className="flex flex-col gap-6 sm:flex-row">
                                 <LimitedTextField
-                                    label="Nome do Combo"
+                                    label="Nome do combo"
                                     placeholder="Ex: Combo Família"
                                     value={nome}
                                     className="flex-1"
@@ -319,7 +319,7 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                                         },
                                         input: {
                                             startAdornment: (
-                                                <span className="mr-2 text-sm text-gray-500">
+                                                <span className="mr-2 text-sm text-tinta-suave">
                                                     R$
                                                 </span>
                                             ),
@@ -341,13 +341,13 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                     </div>
 
                     {/* PERÍODO */}
-                    <div className="mb-8 border-t border-gray-200 pt-5">
+                    <div className="mb-8 border-t border-black/10 pt-5">
                         <div className="mb-5">
-                            <h3 className="text-base font-semibold text-gray-800">
+                            <h3 className="font-display text-base font-bold text-tinta">
                                 Período
                             </h3>
 
-                            <p className="mt-1 text-sm text-gray-500">
+                            <p className="mt-1 text-sm text-tinta-suave">
                                 Opcional. Sem datas, o combo fica disponível
                                 sempre que estiver ativo.
                             </p>
@@ -381,14 +381,14 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                     </div>
 
                     {/* PRODUTOS */}
-                    <div className="border-t border-gray-200 pt-5">
+                    <div className="border-t border-black/10 pt-5">
                         <div className="mb-5 flex items-start justify-between gap-3">
                             <div>
-                                <h3 className="text-base font-semibold text-gray-800">
+                                <h3 className="font-display text-base font-bold text-tinta">
                                     Produtos
                                 </h3>
 
-                                <p className="mt-1 text-sm text-gray-500">
+                                <p className="mt-1 text-sm text-tinta-suave">
                                     Selecione os produtos do combo (mínimo de{" "}
                                     {MINIMO_PRODUTOS_COMBO}) e o tamanho de cada um.
                                 </p>
@@ -445,11 +445,11 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
 
                                     <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
                                         <div className="flex min-w-0 flex-col">
-                                            <TruncatedText maxWidth={280} className="text-sm text-gray-700">
+                                            <TruncatedText maxWidth={280} className="text-sm text-tinta">
 {produto.name}
 </TruncatedText>
 
-                                            <span className="text-xs text-gray-400">
+                                            <span className="text-xs text-tinta-suave/70">
                                                 a partir de{" "}
                                                 {formatCurrency(produto.precoMinimo)}
                                             </span>
@@ -464,23 +464,23 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                         </Menu>
 
                         {carregando ? (
-                            <div className="flex min-h-[210px] items-center justify-center rounded-md border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-500">
+                            <div className="flex min-h-[210px] items-center justify-center rounded-md border border-dashed border-black/20 bg-chapa text-sm text-tinta-suave">
                                 Carregando produtos...
                             </div>
                         ) : produtosSelecionados.length === 0 ? (
                             <div
-                                className={`flex min-h-[210px] items-center justify-center rounded-md border border-dashed bg-gray-50 ${
+                                className={`flex min-h-[210px] items-center justify-center rounded-md border border-dashed bg-chapa ${
                                     tentouSalvar && poucosProdutos
-                                        ? "border-red-400"
-                                        : "border-gray-300"
+                                        ? "border-erro"
+                                        : "border-black/20"
                                 }`}
                             >
                                 <div className="flex flex-col items-center justify-center text-center">
-                                    <p className="text-sm font-medium text-gray-600">
+                                    <p className="text-sm font-medium text-tinta-suave">
                                         Nenhum produto selecionado
                                     </p>
 
-                                    <p className="mt-1 text-xs text-gray-400">
+                                    <p className="mt-1 text-xs text-tinta-suave/70">
                                         Clique em &quot;Gerenciar&quot; para
                                         selecionar os produtos do combo.
                                     </p>
@@ -496,18 +496,18 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                                         <div
                                             key={produto.id}
                                             className={`flex flex-col gap-3 rounded-md border bg-white p-3 ${
-                                                erroTamanho ? "border-red-400" : "border-gray-200"
+                                                erroTamanho ? "border-erro" : "border-black/10"
                                             }`}
                                         >
                                             <div className="flex items-center gap-3">
                                                 <Thumb src={produto.imageUrl} />
 
                                                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                                    <TruncatedText className="text-sm font-medium text-gray-800">
+                                                    <TruncatedText className="text-sm font-medium text-tinta">
                                                         {produto.name}
                                                     </TruncatedText>
 
-                                                    <span className="text-xs text-gray-500">
+                                                    <span className="text-xs text-tinta-suave">
                                                         {tamanho
                                                             ? formatCurrency(tamanho.price)
                                                             : `a partir de ${formatCurrency(produto.precoMinimo)}`}
@@ -562,7 +562,7 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                                                                 opcao.id !== item.productSizeId
                                                             }
                                                         >
-                                                            {opcao.name} · {formatCurrency(opcao.price)}
+                                                            {opcao.name} ({formatCurrency(opcao.price)})
                                                             {opcao.status !== "ACTIVE" && " (inativo)"}
                                                         </MenuItem>
                                                     ))}
@@ -575,21 +575,21 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                         )}
 
                         {produtosSelecionados.length > 0 && somaSeparados > 0 && (
-                            <p className="mt-3 text-sm text-gray-600">
+                            <p className="mt-3 text-sm text-tinta-suave">
                                 Comprados separados:{" "}
                                 <strong>{formatCurrency(somaSeparados)}</strong>
                                 {precoNumero > 0 && precoNumero < somaSeparados && (
                                     <span className="text-green-700">
                                         {" "}
-                                        · o combo economiza{" "}
-                                        {formatCurrency(somaSeparados - precoNumero)}
+                                        (o combo economiza{" "}
+                                        {formatCurrency(somaSeparados - precoNumero)})
                                     </span>
                                 )}
                             </p>
                         )}
 
                         {tentouSalvar && poucosProdutos && (
-                            <p className="mt-2 text-xs text-red-600">
+                            <p className="mt-2 text-xs text-erro">
                                 Selecione pelo menos {MINIMO_PRODUTOS_COMBO}{" "}
                                 produtos.
                             </p>
@@ -618,7 +618,7 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                             ? "Salvando..."
                             : editando
                               ? "Salvar alterações"
-                              : "Criar Combo"
+                              : "Criar combo"
                     }
                     color={ButtonColor.Green}
                     onClick={salvando || carregando ? () => undefined : handleSalvar}

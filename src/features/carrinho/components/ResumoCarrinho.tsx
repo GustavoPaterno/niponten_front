@@ -26,20 +26,20 @@ export default function ResumoCarrinho({
 }: ResumoCarrinhoProps) {
     return (
         <section aria-label="Resumo do pedido" className="flex flex-col gap-3">
-            <h2 className="hidden text-lg font-bold lg:block">Resumo</h2>
+            <h2 className="font-display hidden text-lg font-bold lg:block">Resumo</h2>
 
-            <dl className="flex flex-col gap-2.5 text-neutral-700">
+            <dl className="flex flex-col gap-2.5 text-tinta">
                 <div className="flex items-center justify-between">
                     <dt>Subtotal</dt>
-                    <dd className={`tabular-nums ${conferindo ? "text-neutral-400" : ""}`}>
+                    <dd className={`tabular-nums ${conferindo ? "text-tinta-suave/70" : ""}`}>
                         {formatCurrency(subtotal)}
                     </dd>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 text-neutral-400" aria-disabled="true">
+                <div className="flex items-center justify-between gap-3 text-tinta-suave/70" aria-disabled="true">
                     <dt className="flex items-center gap-2">
                         Pontos
-                        <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium">
+                        <span className="rounded-full bg-chapa px-2 py-0.5 text-[11px] font-medium">
                             Em breve
                         </span>
                     </dt>
@@ -57,23 +57,24 @@ export default function ResumoCarrinho({
                     </dd>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-neutral-200 pt-2.5 text-lg font-bold text-neutral-900">
+                <div className="flex items-center justify-between border-t border-black/10 pt-2.5 font-display text-xl font-extrabold text-tinta">
                     <dt>Total</dt>
-                    <dd className={`tabular-nums ${conferindo ? "text-neutral-400" : ""}`}>
+                    <dd className={`tabular-nums ${conferindo ? "text-tinta-suave/70" : ""}`}>
                         {formatCurrency(total)}
                     </dd>
                 </div>
             </dl>
 
-            {aviso && <p className="text-xs text-neutral-500">{aviso}</p>}
+            {aviso && <p className="text-xs text-tinta-suave">{aviso}</p>}
 
             <button
                 type="button"
                 onClick={onPedir}
                 disabled={!podePedir}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-(--primary) font-semibold text-white shadow-md shadow-red-600/30 transition hover:bg-[#d92628] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+                className="flex h-12 w-full items-center justify-between gap-2 rounded-xl bg-marca px-5 font-display font-bold text-white transition hover:bg-marca-escura active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tinta disabled:cursor-not-allowed disabled:opacity-50"
             >
-                Pedir · {formatCurrency(total)}
+                <span>Fazer pedido</span>
+                <span className="font-extrabold tabular-nums">{formatCurrency(total)}</span>
             </button>
         </section>
     );

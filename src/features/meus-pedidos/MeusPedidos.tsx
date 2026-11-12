@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { CircularProgress, Collapse } from "@mui/material";
 import {
@@ -25,7 +25,7 @@ import {
     type TipoEntregaCliente,
 } from "@/src/services/checkout";
 
-// Pedidos em andamento se atualizam sozinhos nesse intervalo.
+// Reserva: além dos eventos em tempo real, a lista se atualiza nesse intervalo.
 const ATUALIZAR_MS = 20_000;
 
 const ICONE_TIPO = {
@@ -114,6 +114,17 @@ export default function MeusPedidos() {
             .catch((e) => setErro(mensagemDeErro(e)));
     }, [me]);
 
+    // Agrupa vários eventos seguidos (ex.: status e pagamento) numa recarga só.
+    const timerRecarga = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const carregarEmBreve = useCallback(() => {
+        if (timerRecarga.current) {
+            clearTimeout(timerRecarga.current);
+        }
+
+        timerRecarga.current = setTimeout(carregar, 300);
+    }, [carregar]);
+
+    // Carga inicial + reserva periódica + recarga ao voltar para a aba.
     useEffect(() => {
         if (carregando) {
             return;
@@ -121,24 +132,56 @@ export default function MeusPedidos() {
 
         const inicial = setTimeout(carregar, 0);
         const intervalo = setInterval(carregar, ATUALIZAR_MS);
+        const aoVoltar = () => {
+            if (document.visibilityState === "visible") {
+                carregar();
+            }
+        };
+        document.addEventListener("visibilitychange", aoVoltar);
 
         return () => {
             clearTimeout(inicial);
             clearInterval(intervalo);
+            document.removeEventListener("visibilitychange", aoVoltar);
+            if (timerRecarga.current) {
+                clearTimeout(timerRecarga.current);
+            }
         };
     }, [carregando, carregar]);
 
     const ativos = (pedidos ?? []).filter((p) => STATUS_ATIVOS.includes(p.status));
+
+    // Chave estável dos pedidos em andamento: só reabre os streams quando a lista muda.
+    const chaveAtivos = JSON.stringify(ativos.map((p) => [p.id, p.token]));
+
+    // Tempo real: um stream por pedido em andamento (GET /orders/{id}/events). Visitante manda o
+    // código de acompanhamento em ?token= (o proxy o repassa como cabeçalho); logado usa o login.
+    useEffect(() => {
+        const lista = JSON.parse(chaveAtivos) as [number, string | null][];
+
+        const fontes = lista.map(([id, token]) => {
+            const busca = token ? `?token=${encodeURIComponent(token)}` : "";
+            const fonte = new EventSource(`/backend/orders/${id}/events${busca}`);
+
+            // Qualquer evento do pedido (status, pagamento, cancelamento, itens) recarrega a lista.
+            fonte.onmessage = carregarEmBreve;
+
+            return fonte;
+        });
+
+        return () => fontes.forEach((fonte) => fonte.close());
+    }, [chaveAtivos, carregarEmBreve]);
+
     const finalizados = (pedidos ?? []).filter((p) => !STATUS_ATIVOS.includes(p.status));
 
     return (
-        <div className="-mx-2 -mb-2 -mt-2 min-h-[calc(100dvh-5rem)] bg-neutral-50 pb-12 text-neutral-900 sm:-mx-4 sm:-mb-4 sm:-mt-4">
-            <div className="w-full px-4 pt-5 md:px-8 md:pt-8 xl:px-12">
-                <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Meus pedidos</h1>
+        <div className="-mx-2 -mb-2 -mt-2 min-h-[calc(100dvh-4rem)] bg-chapa pb-12 text-tinta sm:-mx-4 sm:-mb-4 sm:-mt-4">
+            <div className="mx-auto w-full max-w-6xl px-4 pt-5 md:px-6 md:pt-8">
+                <h1 className="font-display text-2xl font-extrabold tracking-tight md:text-3xl">Meus pedidos</h1>
                 {!me && !carregando && (
-                    <p className="mt-1 text-sm text-neutral-500">
+                    <p className="mt-1 text-sm text-tinta-suave">
                         Pedidos feitos neste aparelho.{" "}
-                        <Link href={linkDeAcesso("/login", "/pedidos")} className="font-medium text-(--primary)">
+                        <Link href={linkDeAcesso("/login", "/pedidos")} className="font-medium text-marca">
                             Entre
                         </Link>{" "}
                         para ver os da sua conta.
@@ -148,11 +191,11 @@ export default function MeusPedidos() {
                 {erro && !pedidos && (
                     <div className="mt-6 rounded-2xl bg-white px-6 py-10 text-center ring-1 ring-black/5">
                         <p className="font-semibold">Não foi possível carregar seus pedidos</p>
-                        <p className="mt-1 text-sm text-neutral-500">{erro}</p>
+                        <p className="mt-1 text-sm text-tinta-suave">{erro}</p>
                         <button
                             type="button"
                             onClick={carregar}
-                            className="mt-4 rounded-full bg-(--primary) px-5 py-2 text-sm font-semibold text-white"
+                            className="mt-4 rounded-full bg-marca px-5 py-2 text-sm font-semibold text-white"
                         >
                             Tentar de novo
                         </button>
@@ -162,21 +205,21 @@ export default function MeusPedidos() {
                 {!pedidos && !erro && (
                     <div className={`mt-6 ${GRADE}`} aria-busy="true">
                         {[0, 1, 2, 3].map((i) => (
-                            <div key={i} className="h-32 animate-pulse rounded-2xl bg-neutral-200/70" />
+                            <div key={i} className="h-32 animate-pulse rounded-2xl bg-black/10" />
                         ))}
                     </div>
                 )}
 
                 {pedidos && pedidos.length === 0 && (
                     <div className="mt-10 flex flex-col items-center gap-3 text-center">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-(--primary)">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-marca/10 text-marca">
                             <ReceiptLongOutlined fontSize="large" />
                         </div>
-                        <h2 className="text-lg font-bold">Nenhum pedido por aqui</h2>
-                        <p className="text-sm text-neutral-500">Quando você fizer um pedido, ele aparece aqui.</p>
+                        <h2 className="font-display text-lg font-bold">Nenhum pedido por aqui</h2>
+                        <p className="text-sm text-tinta-suave">Quando você fizer um pedido, ele aparece aqui.</p>
                         <Link
-                            href="/menu"
-                            className="mt-2 rounded-full bg-(--primary) px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-red-600/30"
+                            href="/"
+                            className="mt-2 rounded-full bg-marca px-6 py-2.5 text-sm font-display font-bold text-white"
                         >
                             Ver cardápio
                         </Link>
@@ -185,8 +228,8 @@ export default function MeusPedidos() {
 
                 {ativos.length > 0 && (
                     <section className="mt-6 flex flex-col gap-3">
-                        <h2 className="text-lg font-bold">
-                            Em andamento <span className="font-normal text-neutral-400">({ativos.length})</span>
+                        <h2 className="font-display text-lg font-bold">
+                            Em andamento <span className="font-normal text-tinta-suave/70">({ativos.length})</span>
                         </h2>
                         <div className={GRADE}>
                             {ativos.map((p) => (
@@ -198,8 +241,8 @@ export default function MeusPedidos() {
 
                 {finalizados.length > 0 && (
                     <section className="mt-8 flex flex-col gap-3">
-                        <h2 className="text-lg font-bold">
-                            Finalizados <span className="font-normal text-neutral-400">({finalizados.length})</span>
+                        <h2 className="font-display text-lg font-bold">
+                            Finalizados <span className="font-normal text-tinta-suave/70">({finalizados.length})</span>
                         </h2>
                         <div className={GRADE}>
                             {finalizados.map((p) => (
@@ -239,21 +282,21 @@ function CartaoPedido({ pedido, ativo }: { pedido: MeuPedido; ativo: boolean }) 
             <button type="button" onClick={alternar} aria-expanded={aberto} className="flex w-full flex-col gap-2.5 p-3.5 text-left">
                 <div className="flex items-start justify-between gap-3">
                     <div>
-                        <p className="font-mono text-base font-bold">#{pedido.codigo}</p>
-                        <p className="flex items-center gap-1.5 text-sm text-neutral-500">
+                        <p className="font-display text-base font-extrabold tabular-nums">#{pedido.codigo}</p>
+                        <p className="flex items-center gap-1.5 text-sm text-tinta-suave">
                             <IconeTipo sx={{ fontSize: 18 }} />
-                            {NOME_TIPO[pedido.tipo]} · {data(pedido.criadoEm)}
+                            {NOME_TIPO[pedido.tipo]}, {data(pedido.criadoEm)}
                         </p>
                     </div>
                     <div className="text-right">
-                        <p className="font-bold tabular-nums">{formatCurrency(pedido.total)}</p>
-                        <p className="text-xs text-neutral-500">
+                        <p className="font-display text-lg font-extrabold tabular-nums">{formatCurrency(pedido.total)}</p>
+                        <p className="text-xs text-tinta-suave">
                             {pedido.quantidadeItens} {pedido.quantidadeItens === 1 ? "item" : "itens"}
                         </p>
                     </div>
                 </div>
 
-                <p className={`text-sm font-medium ${cancelado ? "text-neutral-500" : ativo ? "text-(--primary)" : "text-green-700"}`}>
+                <p className={`text-sm font-medium ${cancelado ? "text-tinta-suave" : ativo ? "text-marca" : "text-green-700"}`}>
                     {frase(pedido)}
                 </p>
 
@@ -267,12 +310,12 @@ function CartaoPedido({ pedido, ativo }: { pedido: MeuPedido; ativo: boolean }) 
                                 <li key={etapa.status} className="flex min-w-0 flex-1 flex-col gap-1.5">
                                     <span
                                         className={`h-1.5 rounded-full ${
-                                            i < atual ? "bg-(--primary)" : i === atual ? "animate-pulse bg-(--primary)" : "bg-neutral-200"
+                                            i < atual ? "bg-marca" : i === atual ? "animate-pulse bg-marca" : "bg-black/10"
                                         }`}
                                     />
                                     <span
                                         className={`truncate text-[11px] leading-tight sm:text-xs ${
-                                            feita ? "font-semibold text-neutral-800" : "text-neutral-400"
+                                            feita ? "font-semibold text-tinta" : "text-tinta-suave/70"
                                         }`}
                                         title={etapa.label}
                                     >
@@ -287,7 +330,7 @@ function CartaoPedido({ pedido, ativo }: { pedido: MeuPedido; ativo: boolean }) 
                 {!ativo && (
                     <span
                         className={`flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                            cancelado ? "bg-neutral-100 text-neutral-600" : "bg-green-100 text-green-700"
+                            cancelado ? "bg-chapa text-tinta-suave" : "bg-green-100 text-green-700"
                         }`}
                     >
                         {!cancelado && <CheckCircle sx={{ fontSize: 14 }} />}
@@ -295,30 +338,30 @@ function CartaoPedido({ pedido, ativo }: { pedido: MeuPedido; ativo: boolean }) 
                     </span>
                 )}
 
-                <span className="flex items-center justify-center gap-1 text-xs font-medium text-neutral-400">
+                <span className="flex items-center justify-center gap-1 text-xs font-medium text-tinta-suave/70">
                     {aberto ? "Ocultar itens" : "Ver itens"}
                     <ExpandMore sx={{ fontSize: 18 }} className={`transition-transform ${aberto ? "rotate-180" : ""}`} />
                 </span>
             </button>
 
             <Collapse in={aberto} unmountOnExit>
-                <div className="border-t border-neutral-100 px-3.5 py-3">
+                <div className="border-t border-black/5 px-3.5 py-3">
                     {!detalhe && !erroDetalhe && (
                         <div className="flex justify-center py-3">
-                            <CircularProgress size={22} sx={{ color: "#EE2C2E" }} />
+                            <CircularProgress size={22} sx={{ color: "var(--primary)" }} />
                         </div>
                     )}
-                    {erroDetalhe && <p className="py-2 text-sm text-red-600">{erroDetalhe}</p>}
+                    {erroDetalhe && <p className="py-2 text-sm text-erro">{erroDetalhe}</p>}
                     {detalhe && (
                         <ul className="flex flex-col gap-2 text-sm">
                             {(detalhe.items ?? []).map((item, i) => (
                                 <li key={i} className="flex justify-between gap-3">
                                     <span className="min-w-0">
-                                        <span className="font-semibold text-(--primary)">{item.quantity}x</span>{" "}
+                                        <span className="font-semibold text-marca">{item.quantity}x</span>{" "}
                                         {item.name}
-                                        {item.sizeName && <span className="text-neutral-500"> · {item.sizeName}</span>}
+                                        {item.sizeName && <span className="text-tinta-suave"> ({item.sizeName})</span>}
                                         {(item.additionals ?? []).length > 0 && (
-                                            <span className="block text-xs text-neutral-500">
+                                            <span className="block text-xs text-tinta-suave">
                                                 + {(item.additionals ?? []).map((a) => a.name).join(", ")}
                                             </span>
                                         )}
@@ -327,7 +370,7 @@ function CartaoPedido({ pedido, ativo }: { pedido: MeuPedido; ativo: boolean }) 
                                 </li>
                             ))}
                             {detalhe.cancelReason && (
-                                <li className="rounded-lg bg-neutral-50 px-3 py-2 text-neutral-600">
+                                <li className="rounded-lg bg-chapa px-3 py-2 text-tinta-suave">
                                     Motivo do cancelamento: {detalhe.cancelReason}
                                 </li>
                             )}

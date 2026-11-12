@@ -180,7 +180,7 @@ export default function PainelPedidos() {
 
         if (lista.length === 0) {
             return (
-                <p className="rounded-xl border-2 border-dashed border-neutral-200 px-4 py-8 text-center text-sm text-neutral-400">
+                <p className="rounded-xl border-2 border-dashed border-black/10 px-4 py-8 text-center text-sm text-tinta-suave/70">
                     {termo ? "Nenhum pedido encontrado" : "Nenhum pedido aqui"}
                 </p>
             );
@@ -200,10 +200,10 @@ export default function PainelPedidos() {
     };
 
     return (
-        <div className="-mx-2 -mb-2 -mt-2 flex min-h-[calc(100dvh-5rem)] flex-col bg-neutral-50 text-neutral-900 sm:-mx-4 sm:-mb-4 sm:-mt-4">
+        <div className="-mx-2 -mb-2 -mt-2 flex min-h-[calc(100dvh-4rem)] flex-col bg-chapa text-tinta sm:-mx-4 sm:-mb-4 sm:-mt-4">
             {/* Barra superior: título, busca, ordem e histórico. */}
             <div className="flex flex-col gap-3 px-4 pb-3 pt-5 md:px-8 md:pt-6 lg:flex-row lg:items-center lg:justify-between xl:px-12">
-                <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Pedidos</h1>
+                <h1 className="font-display text-2xl font-extrabold tracking-tight md:text-3xl">Pedidos</h1>
 
                 <div className="flex flex-wrap items-center gap-2">
                     <TextField
@@ -219,7 +219,7 @@ export default function PainelPedidos() {
                             input: {
                                 startAdornment: (
                                     <InputAdornment position="start">
-                                        <Search fontSize="small" className="text-neutral-400" />
+                                        <Search fontSize="small" className="text-tinta-suave/70" />
                                     </InputAdornment>
                                 ),
                             },
@@ -239,7 +239,7 @@ export default function PainelPedidos() {
                                 MenuProps: menuSuspenso,
                                 renderValue: (valor) => (
                                     <span className="flex items-center gap-2">
-                                        <SwapVert fontSize="small" className="text-neutral-400" />
+                                        <SwapVert fontSize="small" className="text-tinta-suave/70" />
                                         {ORDENS.find((o) => o.valor === valor)?.label}
                                     </span>
                                 ),
@@ -255,7 +255,7 @@ export default function PainelPedidos() {
 
                     <Link
                         href="/admin/historico"
-                        className="flex h-10 items-center gap-1.5 rounded-full bg-neutral-900 px-4 text-sm font-semibold text-white hover:bg-black"
+                        className="flex h-10 items-center gap-1.5 rounded-full bg-tinta px-4 text-sm font-semibold text-white hover:bg-black"
                     >
                         <HistoryOutlined fontSize="small" />
                         Histórico
@@ -266,11 +266,11 @@ export default function PainelPedidos() {
             {erro && !pedidos && (
                 <div className="mx-4 mt-6 rounded-2xl bg-white px-6 py-10 text-center ring-1 ring-black/5 md:mx-8">
                     <p className="font-semibold">Não foi possível carregar os pedidos</p>
-                    <p className="mt-1 text-sm text-neutral-500">{erro}</p>
+                    <p className="mt-1 text-sm text-tinta-suave">{erro}</p>
                     <button
                         type="button"
                         onClick={recarregar}
-                        className="mt-4 rounded-full bg-(--primary) px-5 py-2 text-sm font-semibold text-white"
+                        className="mt-4 rounded-full bg-marca px-5 py-2 text-sm font-semibold text-white"
                     >
                         Tentar de novo
                     </button>
@@ -280,7 +280,7 @@ export default function PainelPedidos() {
             {!pedidos && !erro && (
                 <div className="grid gap-4 px-4 md:px-8 lg:grid-cols-4 xl:px-12" aria-busy="true">
                     {[0, 1, 2, 3].map((i) => (
-                        <div key={i} className="h-64 animate-pulse rounded-2xl bg-neutral-200/70" />
+                        <div key={i} className="h-64 animate-pulse rounded-2xl bg-black/10" />
                     ))}
                 </div>
             )}
@@ -288,7 +288,7 @@ export default function PainelPedidos() {
             {pedidos && (
                 <>
                     {/* Celular e tablet: abas com contador, uma etapa por vez. */}
-                    <div className="sticky top-20 z-10 bg-neutral-50/95 px-2 backdrop-blur md:px-6 lg:hidden">
+                    <div className="sticky top-16 z-10 bg-chapa/95 px-2 backdrop-blur md:px-6 lg:hidden">
                         <Tabs
                             value={aba}
                             onChange={(_, valor: StatusPedido) => setAba(valor)}
@@ -356,17 +356,17 @@ export default function PainelPedidos() {
                                 <section
                                     key={etapa.status}
                                     aria-label={etapa.titulo}
-                                    className="flex max-h-[calc(100dvh-13rem)] min-h-64 flex-col rounded-2xl bg-neutral-100 ring-1 ring-black/5"
+                                    className="flex max-h-[calc(100dvh-13rem)] min-h-64 flex-col rounded-2xl bg-chapa ring-1 ring-black/5"
                                 >
                                     <header className="flex items-center justify-between px-4 pb-2 pt-3">
-                                        <h2 className="text-sm font-bold uppercase tracking-wide text-neutral-600">
+                                        <h2 className="font-display text-sm font-bold text-tinta-suave">
                                             {etapa.titulo}
                                         </h2>
                                         <span
                                             className={`min-w-6 rounded-full px-2 py-0.5 text-center text-xs font-bold ${
                                                 qtd > 0 && etapa.status === "PENDING"
-                                                    ? "bg-(--primary) text-white"
-                                                    : "bg-white text-neutral-600"
+                                                    ? "bg-marca text-white"
+                                                    : "bg-white text-tinta-suave"
                                             }`}
                                         >
                                             {qtd}

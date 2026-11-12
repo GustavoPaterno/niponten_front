@@ -158,7 +158,7 @@ export default function ProdutosCore() {
     return (
         <div className="flex flex-col gap-4 p-2 sm:gap-5 sm:p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-black">
+                <div className="text-tinta">
                     <Typography variant="h5">Produtos</Typography>
 
                     <Typography variant="subtitle2" className="opacity-60">
@@ -166,7 +166,7 @@ export default function ProdutosCore() {
                     </Typography>
                 </div>
 
-                <div className="text-black sm:shrink-0">
+                <div className="text-tinta sm:shrink-0">
                     <Button text="Novo produto" icon={Add} onClick={abrirCriar} />
                 </div>
             </div>

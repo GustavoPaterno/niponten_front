@@ -2,19 +2,22 @@ export const colors = {
   primary: {
     main: "#EE2C2E",
     light: "#F15A5C",
-    dark: "#C92325",
+    dark: "#B3191C",
     contrastText: "#FFFFFF",
   },
 
+  /** Destaque de oferta (selos de desconto, contador do carrinho). */
+  mostarda: "#FFC233",
+
   background: {
-    default: "#FFFFFF",
+    default: "#F3F1EC",
     paper: "#FFFFFF",
   },
 
   text: {
-    primary: "#000000",
-    secondary: "#666666",
-    disabled: "#999999",
+    primary: "#1D1B19",
+    secondary: "#6B6660",
+    disabled: "#A39E97",
   },
 
   neutral: {
@@ -35,6 +38,6 @@ export const colors = {
 
   success: "#2E7D32",
   warning: "#ED6C02",
-  error: "#EE2C2E",
+  error: "#B42318",
   info: "#1976D2",
 } as const;

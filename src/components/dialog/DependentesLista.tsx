@@ -20,7 +20,7 @@ export default function DependentesLista({
 }: DependentesListaProps) {
     if (carregando) {
         return (
-            <p className="mt-3 text-gray-500">
+            <p className="mt-3 text-tinta-suave">
                 Verificando o que depende deste item...
             </p>
         );
@@ -39,7 +39,7 @@ export default function DependentesLista({
 
     if (comItens.length === 0) {
         return (
-            <p className="mt-3 text-gray-500">
+            <p className="mt-3 text-tinta-suave">
                 Nada depende deste item no momento.
             </p>
         );
@@ -49,9 +49,9 @@ export default function DependentesLista({
         <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
             {comItens.map((grupo) => (
                 <div key={grupo.titulo} className="mb-2 last:mb-0">
-                    <p className="font-semibold text-gray-800">{grupo.titulo}</p>
+                    <p className="font-semibold text-tinta">{grupo.titulo}</p>
 
-                    <ul className="ml-5 list-disc text-gray-700">
+                    <ul className="ml-5 list-disc text-tinta">
                         {grupo.itens.map((item, index) => (
                             <li key={`${item}-${index}`}>{item}</li>
                         ))}
@@ -59,7 +59,7 @@ export default function DependentesLista({
                 </div>
             ))}
 
-            <p className="mt-2 text-xs text-gray-600">
+            <p className="mt-2 text-xs text-tinta-suave">
                 Eles não serão alterados automaticamente. Se necessário, ajuste o
                 status de cada um manualmente.
             </p>

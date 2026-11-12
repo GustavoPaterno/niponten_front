@@ -76,9 +76,9 @@ export default function AdicionaisProduto({
         <div className="min-w-0">
             <div className="mb-5 flex items-start justify-between gap-3">
                 <div>
-                    <h3 className="text-base font-semibold text-gray-800">Adicionais</h3>
+                    <h3 className="font-display text-base font-bold text-tinta">Adicionais</h3>
 
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-1 text-sm text-tinta-suave">
                         Ingredientes que o cliente pode acrescentar, com o limite de cada um. O
                         preço é o do ingrediente.
                     </p>
@@ -121,11 +121,11 @@ export default function AdicionaisProduto({
                         </div>
 
                         <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
-                            <TruncatedText maxWidth={200} className="text-sm text-gray-700">
+                            <TruncatedText maxWidth={200} className="text-sm text-tinta">
                                 {ingrediente.name}
                             </TruncatedText>
 
-                            <span className="shrink-0 text-xs text-gray-500">
+                            <span className="shrink-0 text-xs text-tinta-suave">
                                 + {formatCurrency(ingrediente.price)}
                             </span>
                         </div>
@@ -134,15 +134,15 @@ export default function AdicionaisProduto({
             </Menu>
 
             {carregando ? (
-                <div className="flex min-h-[120px] items-center justify-center rounded-md border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-500">
+                <div className="flex min-h-[120px] items-center justify-center rounded-md border border-dashed border-black/20 bg-chapa text-sm text-tinta-suave">
                     Carregando ingredientes...
                 </div>
             ) : linhas.length === 0 ? (
-                <div className="flex min-h-[120px] items-center justify-center rounded-md border border-dashed border-gray-300 bg-gray-50 px-4">
+                <div className="flex min-h-[120px] items-center justify-center rounded-md border border-dashed border-black/20 bg-chapa px-4">
                     <div className="text-center">
-                        <p className="text-sm font-medium text-gray-600">Nenhum adicional liberado</p>
+                        <p className="text-sm font-medium text-tinta-suave">Nenhum adicional liberado</p>
 
-                        <p className="mt-1 text-xs text-gray-400">
+                        <p className="mt-1 text-xs text-tinta-suave/70">
                             Sem adicionais, a seção não aparece para o cliente. Use
                             &quot;Gerenciar&quot; para liberar.
                         </p>
@@ -156,17 +156,17 @@ export default function AdicionaisProduto({
                         return (
                             <div
                                 key={form.ingredientId}
-                                className="flex flex-wrap items-center gap-3 rounded-md border border-gray-200 bg-white p-3"
+                                className="flex flex-wrap items-center gap-3 rounded-md border border-black/10 bg-white p-3"
                             >
                                 <Thumb src={ingrediente.imageUrl} />
 
                                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                    <TruncatedText className="text-sm font-medium text-gray-800">
+                                    <TruncatedText className="text-sm font-medium text-tinta">
                                         {ingrediente.name}
                                     </TruncatedText>
 
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs text-gray-500">
+                                        <span className="text-xs text-tinta-suave">
                                             + {formatCurrency(ingrediente.price)}
                                         </span>
 

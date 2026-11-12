@@ -14,7 +14,7 @@ export default function SidebarLogout() {
     const [saindo, setSaindo] = useState(false);
 
     const classe =
-        "flex w-full cursor-pointer items-center justify-between rounded-md bg-red-500 px-3 py-2 text-xs text-white transition-colors duration-200 hover:bg-red-600 active:bg-red-700";
+        "flex h-11 w-full cursor-pointer items-center justify-center rounded-xl font-display text-sm font-bold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:opacity-60";
 
     if (carregando) {
         return null;
@@ -22,9 +22,8 @@ export default function SidebarLogout() {
 
     if (!me) {
         return (
-            <Link href="/login" onClick={closeSidebar} className={classe}>
-                <span>Entrar</span>
-                <span>›</span>
+            <Link href="/login" onClick={closeSidebar} className={`${classe} bg-marca text-white hover:bg-marca-escura`}>
+                Entrar
             </Link>
         );
     }
@@ -34,7 +33,7 @@ export default function SidebarLogout() {
         await sair();
         closeSidebar();
         setSaindo(false);
-        router.push("/login");
+        router.push("/");
     }
 
     return (
@@ -42,10 +41,9 @@ export default function SidebarLogout() {
             type="button"
             onClick={handleLogout}
             disabled={saindo}
-            className={classe}
+            className={`${classe} border-2 border-black/15 text-tinta hover:border-tinta`}
         >
-            <span>{saindo ? "Saindo..." : "Deslogar"}</span>
-            <span>›</span>
+            {saindo ? "Saindo..." : "Sair da conta"}
         </button>
     );
 }

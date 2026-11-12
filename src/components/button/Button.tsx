@@ -26,10 +26,11 @@ export default function Button({
     color = ButtonColor.Primary,
 }: ButtonProps) {
     const colors: Record<ButtonColor, string> = {
-        [ButtonColor.Primary]: "bg-[#EE2C2E] text-white",
-        [ButtonColor.Secondary]: "bg-gray-600 text-white",
-        [ButtonColor.Green]: "bg-green-600 text-white",
-        [ButtonColor.Danger]: "bg-red-600 text-white",
+        [ButtonColor.Primary]: "bg-marca text-white",
+        [ButtonColor.Secondary]: "bg-white text-tinta ring-2 ring-inset ring-black/15 hover:ring-tinta",
+        // "Green" é a ação de confirmar (salvar, criar): usa o vermelho da marca.
+        [ButtonColor.Green]: "bg-marca text-white",
+        [ButtonColor.Danger]: "bg-marca-escura text-white",
     };
 
     return (
@@ -39,15 +40,15 @@ export default function Button({
             className={`
                 flex items-center justify-center gap-2
                 px-4 py-2
-                rounded-md
+                rounded-xl font-display font-bold
                 h-10
                 cursor-pointer
                 transition-opacity
-                hover:opacity-80
+                hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tinta
                 ${colors[color]}
             `}
         >
-            {Icon && <Icon sx={{ color: (iconColor ?? "#FFFFFF"), fontSize: 30 }} />}
+            {Icon && <Icon sx={{ color: iconColor ?? "currentColor", fontSize: 26 }} />}
 
             <span className="flex-1 truncate">{text}</span>
         </button>

@@ -72,27 +72,27 @@ export default function IngredientesTable({
             icon: EditIcon,
             label: "Editar",
             onClick: onEditar,
-            color: "#000000",
+            color: "#1D1B19",
         },
         {
             icon: PauseIcon,
             label: "Marcar como esgotado",
             onClick: onAlterarStatus,
             hidden: (ingrediente) => ingrediente.status !== "ACTIVE",
-            color: "#000000",
+            color: "#1D1B19",
         },
         {
             icon: PlayArrowIcon,
             label: "Marcar como disponível",
             onClick: onAlterarStatus,
             hidden: (ingrediente) => ingrediente.status === "ACTIVE",
-            color: "#000000",
+            color: "#1D1B19",
         },
         {
             icon: DeleteIcon,
             label: "Excluir",
             onClick: onExcluir,
-            color: "#EE2C2E",
+            color: "var(--erro)",
         },
     ];
 

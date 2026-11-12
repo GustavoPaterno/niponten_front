@@ -81,27 +81,27 @@ export default function ProdutosTable({
             icon: EditIcon,
             label: "Editar",
             onClick: onEditar,
-            color: "#000000",
+            color: "#1D1B19",
         },
         {
             icon: PauseIcon,
             label: "Inativar",
             onClick: onAlterarStatus,
             hidden: (produto) => produto.status !== "ACTIVE",
-            color: "#000000",
+            color: "#1D1B19",
         },
         {
             icon: PlayArrowIcon,
             label: "Ativar",
             onClick: onAlterarStatus,
             hidden: (produto) => produto.status === "ACTIVE",
-            color: "#000000",
+            color: "#1D1B19",
         },
         {
             icon: DeleteIcon,
             label: "Excluir",
             onClick: onExcluir,
-            color: "#EE2C2E",
+            color: "var(--erro)",
         },
     ];
 

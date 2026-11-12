@@ -34,15 +34,15 @@ export default function SidebarTheme() {
 
   return (
     <div className="w-full">
-      <h2 className="mb-2 text-sm text-red-500">
+      <h2 className="mb-2 font-display text-sm font-bold text-tinta-suave">
         Configurações
       </h2>
 
-      <div className="flex w-full items-center justify-between rounded-md bg-gray-100 px-3 py-3 text-xs text-black">
+      <div className="flex w-full items-center justify-between rounded-xl bg-chapa px-3 py-3 text-sm text-tinta">
         <span>Tema</span>
 
         <div className="flex items-center gap-2">
-          <span className="text-gray-500">
+          <span className="text-tinta-suave">
             {theme === "light" ? "claro" : "escuro"}
           </span>
 
@@ -53,8 +53,8 @@ export default function SidebarTheme() {
             aria-pressed={theme === "light"}
             className={`cursor-pointer rounded px-2 py-1 transition-colors duration-300 ${
               theme === "light"
-                ? "bg-red-500 text-white"
-                : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                ? "bg-marca text-white"
+                : "bg-black/10 text-tinta-suave hover:bg-black/20"
             }`}
           >
             ☀
@@ -67,8 +67,8 @@ export default function SidebarTheme() {
             aria-pressed={theme === "dark"}
             className={`cursor-pointer rounded px-2 py-1 transition-colors duration-300 ${
               theme === "dark"
-                ? "bg-red-500 text-white"
-                : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                ? "bg-marca text-white"
+                : "bg-black/10 text-tinta-suave hover:bg-black/20"
             }`}
           >
             ◐

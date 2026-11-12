@@ -28,8 +28,8 @@ export default function InfoCard({
             </div>
 
             <div className="h-full w-[60%] gap-2 flex flex-col justify-center items-center">
-                <h3 className="text-black opacity-60">{title}</h3>
-                <p className="text-black opacity-100 font-bold">{text}</p>
+                <h3 className="font-display text-tinta opacity-60">{title}</h3>
+                <p className="text-tinta opacity-100 font-bold">{text}</p>
             </div>
         </div>
     );
