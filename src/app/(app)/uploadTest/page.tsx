@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 
-/** Página interna para testar o envio de imagens ao Vercel Blob. */
+import { urlDeImagem } from "@/src/lib/imagem";
+
 export default function UploadTestPage() {
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState<string | null>(null);
@@ -75,7 +76,7 @@ export default function UploadTestPage() {
         {url && (
           <div className="mt-4 rounded-xl bg-chapa px-4 py-3 text-sm">
             <p className="font-bold">Enviado</p>
-            <a href={url} target="_blank" rel="noopener noreferrer" className="break-all text-marca underline">
+            <a href={urlDeImagem(url) ?? url} target="_blank" rel="noopener noreferrer" className="break-all text-marca underline">
               {url}
             </a>
           </div>

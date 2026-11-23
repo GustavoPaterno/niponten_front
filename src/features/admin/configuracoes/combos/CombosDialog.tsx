@@ -16,6 +16,8 @@ import {
     useMediaQuery,
 } from "@mui/material";
 import LimitedTextField from "@/src/components/input/LimitedTextField";
+import ImagemUpload from "@/src/components/image/ImagemUpload";
+import { SEM_ALTERACAO, type ImagemEscolha } from "@/src/lib/uploadImagem";
 import TruncatedText from "@/src/components/text/TruncatedText";
 import { Close, Delete } from "@mui/icons-material";
 
@@ -42,10 +44,8 @@ import {
 
 interface CombosDialogProps {
     open: boolean;
-    /** Combo sendo editado. `null` = criando um novo. */
     combo: Combo | null;
     onClose: () => void;
-    /** Devolve true quando o dialog pode ser fechado (salvou). */
     onSave: (input: ComboInput) => Promise<boolean>;
 }
 
@@ -73,7 +73,6 @@ export default function CombosDialog({
                 },
             }}
         >
-            {/* O formulário só existe enquanto o dialog está aberto: o estado reinicia a cada abertura. */}
             <CombosForm combo={combo} onClose={onClose} onSave={onSave} />
         </Dialog>
     );
@@ -117,6 +116,7 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
     const [produtosAnchorEl, setProdutosAnchorEl] =
         useState<null | HTMLElement>(null);
 
+    const [imagem, setImagem] = useState<ImagemEscolha>(SEM_ALTERACAO);
     const [tentouSalvar, setTentouSalvar] = useState(false);
     const [salvando, setSalvando] = useState(false);
 
@@ -151,7 +151,6 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                 return atuais.filter((item) => item.productId !== id);
             }
 
-            // Com um tamanho só (ativo), ele já vem escolhido.
             const produto = catalogoProdutos.find((p) => p.id === id);
             const ativos = produto?.tamanhos.filter((t) => t.status === "ACTIVE") ?? [];
 
@@ -177,13 +176,11 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
         return produto ? [{ produto, tamanho, item }] : [];
     });
 
-    // O backend exige o tamanho de todo produto que tem tamanhos.
     const semTamanho = (produto: Produto, item: ComboItemInput) =>
         produto.tamanhos.length > 0 && item.productSizeId === null;
     const faltaTamanho = produtosSelecionados.some(({ produto, item }) =>
         semTamanho(produto, item)
     );
-    // Quanto os itens custariam comprados separadamente, para comparar com o preço do combo.
     const somaSeparados = produtosSelecionados.reduce(
         (total, { tamanho }) => total + (tamanho?.price ?? 0),
         0
@@ -220,6 +217,7 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
             startDate: fromDatetimeInput(dataInicio),
             endDate: fromDatetimeInput(dataFim),
             itens,
+            imagem,
         });
 
         if (!salvou) {
@@ -269,7 +267,6 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                         </div>
                     )}
 
-                    {/* INFORMAÇÕES GERAIS */}
                     <div className="mb-8">
                         <div className="mb-5">
                             <h3 className="font-display pt-2 text-base font-bold text-tinta">
@@ -282,6 +279,13 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                         </div>
 
                         <div className="flex flex-col gap-6 pt-3">
+                            <ImagemUpload
+                                urlAtual={combo?.imageUrl ?? null}
+                                value={imagem}
+                                onChange={setImagem}
+                                disabled={salvando}
+                            />
+
                             <div className="flex flex-col gap-6 sm:flex-row">
                                 <LimitedTextField
                                     label="Nome do combo"
@@ -340,7 +344,6 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                         </div>
                     </div>
 
-                    {/* PERÍODO */}
                     <div className="mb-8 border-t border-black/10 pt-5">
                         <div className="mb-5">
                             <h3 className="font-display text-base font-bold text-tinta">
@@ -380,7 +383,6 @@ function CombosForm({ combo, onClose, onSave }: CombosFormProps) {
                         </div>
                     </div>
 
-                    {/* PRODUTOS */}
                     <div className="border-t border-black/10 pt-5">
                         <div className="mb-5 flex items-start justify-between gap-3">
                             <div>
