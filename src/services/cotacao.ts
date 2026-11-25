@@ -2,6 +2,7 @@ import type { OrderQuoteResponse } from "@joao.sumi/nippon-ten";
 
 import { api } from "@/src/lib/api";
 import { paraPedido, type ItemCarrinho } from "@/src/lib/carrinho";
+import { unwrap } from "@/src/lib/http";
 
 /**
  * Confere o carrinho com o backend (POST /orders/quote, público). O backend devolve o preço
@@ -110,6 +111,40 @@ function montar(itens: ItemCarrinho[], resposta: OrderQuoteResponse): Omit<Cotac
         itens: porChave,
         subtotal: resposta.subtotal ?? 0,
         total: resposta.total ?? resposta.subtotal ?? 0,
+    };
+}
+
+/** Valores oficiais do pedido inteiro, para o checkout. */
+export interface CotacaoPedido {
+    /** Total de cada item, na mesma ordem do carrinho. */
+    totaisDosItens: number[];
+    subtotal: number;
+    /** Parte do subtotal que aceita desconto com pontos. */
+    subtotalElegivel: number;
+    taxaEntrega: number;
+    desconto: number;
+    total: number;
+    /** Pontos que este pedido rende (valem para as próximas compras). */
+    pontosAGanhar: number;
+}
+
+/** Usar pontos (`pontos` > 0) exige cliente logado. Lança ApiError se algo no carrinho for recusado. */
+export async function cotarPedido(itens: ItemCarrinho[], pontos: number): Promise<CotacaoPedido> {
+    const resposta = await unwrap(
+        api.order.ordersQuotePost({
+            items: itens.map(paraPedido),
+            pointsToRedeem: pontos > 0 ? pontos : undefined,
+        })
+    );
+
+    return {
+        totaisDosItens: (resposta.items ?? []).map((i) => i.total ?? 0),
+        subtotal: resposta.subtotal ?? 0,
+        subtotalElegivel: resposta.pointsEligibleSubtotal ?? 0,
+        taxaEntrega: resposta.deliveryFee ?? 0,
+        desconto: resposta.discount ?? 0,
+        total: resposta.total ?? 0,
+        pontosAGanhar: resposta.pointsToEarn ?? 0,
     };
 }
 

@@ -170,7 +170,37 @@ export function removerDoCarrinho(chave: string) {
 }
 
 export function limparCarrinho() {
+    definirPontosDoCarrinho(0);
     gravar([]);
+}
+
+/* ---------- Pontos que o cliente escolheu usar neste carrinho ---------- */
+
+const CHAVE_PONTOS = "marusan.carrinho.pontos";
+
+function lerPontos(): number {
+    try {
+        const pontos = Number(localStorage.getItem(CHAVE_PONTOS));
+
+        return Number.isInteger(pontos) && pontos > 0 ? pontos : 0;
+    } catch {
+        return 0;
+    }
+}
+
+/** Escolha feita no carrinho e levada ao checkout. O limite é aplicado por quem lê. */
+export function usePontosDoCarrinho(): number {
+    return useSyncExternalStore(assinar, lerPontos, () => 0);
+}
+
+export function definirPontosDoCarrinho(pontos: number) {
+    try {
+        localStorage.setItem(CHAVE_PONTOS, String(pontos));
+    } catch {
+        // Sem localStorage não há carrinho nem pontos escolhidos.
+    }
+
+    window.dispatchEvent(new Event(EVENTO));
 }
 
 /** Preço de 1 unidade do item, com os adicionais. */

@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ShoppingCartOutlined } from "@mui/icons-material";
 
+import { useSessao } from "@/src/components/auth/SessaoProvider";
 import ConfirmDialog from "@/src/components/dialog/ConfirmDialog";
-import { useToast } from "@/src/components/feedback/ToastProvider";
 import {
     limparCarrinho,
     quantidadeTotal,
@@ -16,9 +16,10 @@ import {
 } from "@/src/lib/carrinho";
 import { cotarCarrinho, type Cotacao } from "@/src/services/cotacao";
 
-import FinalizarPedidoDialog from "./components/FinalizarPedidoDialog";
 import LinhaCarrinho from "./components/LinhaCarrinho";
+import PontosCarrinho from "./components/PontosCarrinho";
 import ResumoCarrinho from "./components/ResumoCarrinho";
+import { useDescontoPontos } from "./useDescontoPontos";
 
 // Espera depois da última mudança antes de recotar (ex.: vários cliques no +).
 const ESPERA_COTACAO_MS = 400;
@@ -40,9 +41,14 @@ export default function CarrinhoBuild() {
     const itens = useCarrinho();
     const [estado, setEstado] = useState<EstadoCotacao>({ tipo: "conferindo" });
     const [confirmarLimpar, setConfirmarLimpar] = useState(false);
-    const [finalizando, setFinalizando] = useState(false);
     const router = useRouter();
-    const toast = useToast();
+    const { me } = useSessao();
+
+    // Só dá para calcular desconto com o carrinho conferido e sem item recusado.
+    const conferido = estado.tipo === "pronta" && estado.para === itens;
+    const carrinhoComProblema =
+        estado.tipo === "pronta" && itens.some((i) => estado.cotacao.problemas[i.chave]);
+    const desconto = useDescontoPontos(itens, me, me?.type === "CLIENT" && conferido && !carrinhoComProblema);
 
     useEffect(() => {
         if (itens.length === 0) {
@@ -109,10 +115,11 @@ export default function CarrinhoBuild() {
             : null;
 
     const quantidade = quantidadeTotal(itens);
+    const comPontos = desconto.pontos > 0 ? desconto.cotacao : null;
 
     return (
-        // pb-80 no celular: espaço para o resumo fixo no rodapé.
-        <div className="-mx-2 -mb-2 -mt-2 min-h-[calc(100dvh-4rem)] bg-chapa pb-80 text-tinta sm:-mx-4 sm:-mb-4 sm:-mt-4 lg:pb-12">
+        // Espaço no celular para o resumo fixo no rodapé.
+        <div className="-mx-2 -mb-2 -mt-2 min-h-[calc(100dvh-4rem)] bg-chapa pb-[27rem] text-tinta sm:-mx-4 sm:-mb-4 sm:-mt-4 lg:pb-12">
             <div className="mx-auto max-w-6xl px-4 pt-5 md:px-6 md:pt-8">
                 <div className="mb-3 flex items-end justify-between gap-3">
                     <div>
@@ -148,12 +155,22 @@ export default function CarrinhoBuild() {
                         <div className="mx-auto md:max-w-xl lg:max-w-none">
                             <ResumoCarrinho
                                 subtotal={subtotal}
-                                total={total}
-                                conferindo={conferindo}
+                                total={comPontos ? comPontos.total : total}
+                                desconto={comPontos?.desconto ?? 0}
+                                pontosUsados={desconto.pontos}
+                                linhaDePontos={
+                                    <PontosCarrinho
+                                        situacao={desconto.situacao}
+                                        pontos={desconto.pontos}
+                                        carrinhoComProblema={carrinhoComProblema}
+                                        onTentarDeNovo={desconto.recarregar}
+                                    />
+                                }
+                                conferindo={conferindo || (desconto.pontos > 0 && !desconto.cotacao && !desconto.erroCotacao)}
                                 aviso={aviso}
                                 // Só depois de conferir os preços e sem itens recusados pelo backend.
                                 podePedir={!conferindo && qtdComProblema === 0}
-                                onPedir={() => setFinalizando(true)}
+                                onPedir={() => router.push("/checkout")}
                             />
                         </div>
                     </div>
@@ -166,19 +183,6 @@ export default function CarrinhoBuild() {
                     + Adicionar mais itens
                 </Link>
             </div>
-
-            <FinalizarPedidoDialog
-                open={finalizando}
-                itens={itens}
-                total={total}
-                onFechar={() => setFinalizando(false)}
-                onCriado={(pedido) => {
-                    limparCarrinho();
-                    setFinalizando(false);
-                    toast.success(`Pedido #${pedido.codigo} enviado! Acompanhe por aqui.`);
-                    router.push("/pedidos");
-                }}
-            />
 
             <ConfirmDialog
                 open={confirmarLimpar}

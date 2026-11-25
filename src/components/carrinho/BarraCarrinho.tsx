@@ -6,10 +6,11 @@ import { usePathname } from "next/navigation";
 import { formatCurrency } from "@/src/lib/format";
 import { quantidadeTotal, totalDoItem, useCarrinho } from "@/src/lib/carrinho";
 
-/** Telas onde a barra atrapalha: o próprio carrinho, o produto (tem botão de adicionar) e o admin. */
+/** Telas onde a barra atrapalha: carrinho, checkout, o produto (tem botão de adicionar) e o admin. */
 function escondeEm(pathname: string): boolean {
     return (
         pathname === "/carrinho" ||
+        pathname === "/checkout" ||
         pathname.startsWith("/menu/produto") ||
         pathname.startsWith("/admin")
     );

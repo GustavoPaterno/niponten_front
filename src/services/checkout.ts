@@ -10,6 +10,7 @@ import type { Me } from "@/src/lib/auth";
 import { paraPedido, type ItemCarrinho } from "@/src/lib/carrinho";
 import { unwrap, unwrapTodas } from "@/src/lib/http";
 import { guardarPedidoLocal, lerPedidosLocais } from "@/src/lib/pedidosLocais";
+import { opcaoDePagamento, type FormaEscolhida, type PedidoAPagar } from "@/src/services/pagamento";
 
 /** Finalização do pedido pelo cliente e a lista "Meus pedidos". */
 
@@ -72,24 +73,25 @@ export interface DadosFinalizacao {
     /** Visitante (e funcionário pedindo pelo balcão): nome e telefone. */
     nome: string;
     telefone: string;
+    /** Obrigatório para visitante (link de acompanhamento); opcional para funcionário. */
+    email: string;
+    forma: FormaEscolhida;
+    /** Pontos a usar como desconto. Só vale para cliente logado. */
+    pontos: number;
     /** Cliente logado: endereço salvo escolhido. */
     enderecoId: number | null;
     /** Endereço novo (visitante sempre; cliente quando cadastra um). */
     endereco: EnderecoInput | null;
 }
 
-export interface PedidoCriado {
-    id: number;
-    codigo: string;
-}
+export type PedidoCriado = PedidoAPagar;
 
 /**
  * Cria o pedido. Regras do backend:
- * - visitante: nome e telefone obrigatórios; endereço digitado no delivery;
- * - cliente: sem nome/telefone; no delivery só aceita endereço salvo (addressId), então um
- *   endereço novo é salvo na conta antes;
- * - funcionário (com permissão Pedidos): pede como visitante, pelo balcão.
- * O pagamento ainda não existe na tela: vai "Dinheiro" (paga na entrega/balcão).
+ * - visitante: nome, telefone e e-mail obrigatórios; endereço digitado no delivery;
+ * - cliente: sem nome/telefone/e-mail; no delivery só aceita endereço salvo (addressId), então um
+ *   endereço novo é salvo na conta antes. Só ele pode usar pontos;
+ * - funcionário (com permissão Pedidos): pede como visitante, pelo balcão (e-mail opcional).
  */
 export async function criarPedido(
     itens: ItemCarrinho[],
@@ -112,15 +114,21 @@ export async function criarPedido(
         }
     }
 
+    const pagamento = opcaoDePagamento(dados.forma);
+
     const resposta = await unwrap(
         api.order.ordersPost({
             items: itens.map(paraPedido),
             fulfillmentType: dados.tipo,
-            paymentMethod: "CASH",
+            paymentMethod: pagamento.metodo,
+            paymentChannel: pagamento.canal,
+            notes: pagamento.observacao,
+            pointsToRedeem: cliente && dados.pontos > 0 ? dados.pontos : undefined,
             addressId,
             address: !cliente && delivery && dados.endereco ? paraEnderecoRequest(dados.endereco) : undefined,
             guestName: cliente ? undefined : dados.nome.trim(),
             guestPhone: cliente ? undefined : dados.telefone.replace(/\D/g, "") || undefined,
+            guestEmail: cliente ? undefined : dados.email.trim() || undefined,
         })
     );
 
@@ -139,7 +147,7 @@ export async function criarPedido(
         });
     }
 
-    return { id, codigo };
+    return { id, codigo, total: pedido.total ?? 0, token: criado.trackingToken ?? null };
 }
 
 /* ---------- Meus pedidos ---------- */
@@ -156,7 +164,13 @@ export interface MeuPedido {
     token: string | null;
 }
 
-export const STATUS_ATIVOS: Status3[] = ["PENDING", "IN_PREPARATION", "READY", "OUT_FOR_DELIVERY"];
+export const STATUS_ATIVOS: Status3[] = [
+    "AWAITING_PAYMENT",
+    "PENDING",
+    "IN_PREPARATION",
+    "READY",
+    "OUT_FOR_DELIVERY",
+];
 
 function deResumo(p: OrderSummaryResponse): MeuPedido {
     return {
@@ -193,7 +207,7 @@ export async function listarMeusPedidos(me: Me | null): Promise<MeuPedido[]> {
 
     if (me?.type === "CLIENT") {
         const lista = await unwrapTodas((page, size) =>
-            api.user.usersUserIdOrdersGet(me.userId, page, size)
+            api.user.usersUserIdOrdersGet(me.userId, undefined, page, size)
         );
         pedidos = lista.map(deResumo);
     } else {

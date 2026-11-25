@@ -24,6 +24,7 @@ export const ETAPAS_ATIVAS: { status: StatusPedido; titulo: string; curto: strin
 ];
 
 export const NOME_STATUS: Record<StatusPedido, string> = {
+    AWAITING_PAYMENT: "Aguardando pagamento",
     PENDING: "Novo",
     IN_PREPARATION: "Em preparo",
     READY: "Pronto",
@@ -74,7 +75,7 @@ function toPedido(p: OrderSummaryResponse): Pedido {
 }
 
 async function listarPorStatus(status: StatusPedido): Promise<Pedido[]> {
-    const lista = await unwrapTodas((page, size) => api.order.ordersGet(page, size, status));
+    const lista = await unwrapTodas((page, size) => api.order.ordersGet(undefined, undefined, page, size, new Set([status])));
 
     return lista.map(toPedido);
 }
