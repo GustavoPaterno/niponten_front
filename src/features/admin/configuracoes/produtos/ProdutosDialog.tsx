@@ -16,6 +16,8 @@ import {
     useMediaQuery,
 } from "@mui/material";
 import LimitedTextField from "@/src/components/input/LimitedTextField";
+import ImagemUpload from "@/src/components/image/ImagemUpload";
+import { SEM_ALTERACAO, type ImagemEscolha } from "@/src/lib/uploadImagem";
 import TruncatedText from "@/src/components/text/TruncatedText";
 import { Add, Close, Delete } from "@mui/icons-material";
 
@@ -42,10 +44,8 @@ import NovoTamanhoDialog from "./components/NovoTamanhoDialog";
 
 interface ProdutosDialogProps {
     open: boolean;
-    /** Produto sendo editado. `null` = criando um novo. */
     produto: Produto | null;
     onClose: () => void;
-    /** Devolve true quando o dialog pode ser fechado (salvou). */
     onSave: (input: ProdutoInput) => Promise<boolean>;
 }
 
@@ -73,7 +73,6 @@ export default function ProdutosDialog({
                 },
             }}
         >
-            {/* O formulário só existe enquanto o dialog está aberto: o estado reinicia a cada abertura. */}
             <ProdutosForm produto={produto} onClose={onClose} onSave={onSave} />
         </Dialog>
     );
@@ -140,6 +139,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
         useState<null | HTMLElement>(null);
     const [novoTamanhoAberto, setNovoTamanhoAberto] = useState(false);
 
+    const [imagem, setImagem] = useState<ImagemEscolha>(SEM_ALTERACAO);
     const [tentouSalvar, setTentouSalvar] = useState(false);
     const [salvando, setSalvando] = useState(false);
 
@@ -255,6 +255,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                 maximo: Number(a.maximo),
                 status: a.status,
             })),
+            imagem,
         });
 
         if (!salvou) {
@@ -317,6 +318,13 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                         </div>
 
                         <div className="flex flex-col gap-6 pt-3">
+                            <ImagemUpload
+                                urlAtual={produto?.imageUrl ?? null}
+                                value={imagem}
+                                onChange={setImagem}
+                                disabled={salvando}
+                            />
+
                             <LimitedTextField
                                 label="Nome do produto"
                                 placeholder="Ex: Pastel de Carne"
@@ -345,7 +353,6 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                     </div>
 
                     <div className="grid grid-cols-1 gap-5 border-t border-black/10 pt-2 lg:grid-cols-2 lg:gap-6">
-                        {/* Ingredientes */}
                         <div className="min-w-0">
                             <div className="mb-5 flex items-start justify-between gap-3">
                                 <div>
@@ -498,7 +505,6 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                             )}
                         </div>
 
-                        {/* Tamanhos */}
                         <div className="min-w-0">
                             <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                                 <div>

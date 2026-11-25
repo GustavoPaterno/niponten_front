@@ -2,6 +2,7 @@ import type { IngredientResponse } from "@joao.sumi/nippon-ten";
 
 import { api } from "@/src/lib/api";
 import { unwrap, unwrapTodas, unwrapVoid } from "@/src/lib/http";
+import { aplicarImagem, SEM_ALTERACAO, type ImagemEscolha } from "@/src/lib/uploadImagem";
 
 export type IngredienteStatus = "ACTIVE" | "OUT_OF_STOCK";
 
@@ -19,6 +20,8 @@ export interface IngredienteInput {
     description: string;
     price: number;
     status: IngredienteStatus;
+    /** O que fazer com a imagem. Sem isso, a imagem atual é mantida. */
+    imagem?: ImagemEscolha;
 }
 
 export interface IngredienteDependentes {
@@ -56,8 +59,11 @@ export async function listarIngredientes(): Promise<Ingrediente[]> {
 export async function criarIngrediente(
     input: IngredienteInput
 ): Promise<Ingrediente> {
-    const criado = await unwrap(
-        api.ingredient.ingredientsPost(toRequest(input, null))
+    const criado = await aplicarImagem(
+        null,
+        input.imagem ?? SEM_ALTERACAO,
+        (imageUrl) => unwrap(api.ingredient.ingredientsPost(toRequest(input, imageUrl))),
+        (resposta) => resposta.imageUrl
     );
 
     return toIngrediente(criado as IngredientResponse);
@@ -67,11 +73,12 @@ export async function atualizarIngrediente(
     ingrediente: Ingrediente,
     input: IngredienteInput
 ): Promise<Ingrediente> {
-    const atualizado = await unwrap(
-        api.ingredient.ingredientsIdPut(
-            ingrediente.id,
-            toRequest(input, ingrediente.imageUrl)
-        )
+    const atualizado = await aplicarImagem(
+        ingrediente.imageUrl,
+        input.imagem ?? SEM_ALTERACAO,
+        (imageUrl) =>
+            unwrap(api.ingredient.ingredientsIdPut(ingrediente.id, toRequest(input, imageUrl))),
+        (resposta) => resposta.imageUrl
     );
 
     return toIngrediente(atualizado);

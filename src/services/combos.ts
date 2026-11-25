@@ -2,22 +2,19 @@ import type { ComboResponse } from "@joao.sumi/nippon-ten";
 
 import { api } from "@/src/lib/api";
 import { unwrap, unwrapTodas, unwrapVoid } from "@/src/lib/http";
+import { aplicarImagem, SEM_ALTERACAO, type ImagemEscolha } from "@/src/lib/uploadImagem";
 
 export type ComboStatus = "ACTIVE" | "INACTIVE";
 
-/** Associação combo + produto. `id` é o id da associação (usado para remover). */
 export interface ComboProduto {
     id: number;
     productId: number;
-    /** Id da associação produto + tamanho (ProductSize). `null` quando o produto não tem tamanhos. */
     productSizeId: number | null;
     name: string;
 }
 
-/** Um produto do combo e o tamanho escolhido. */
 export interface ComboItemInput {
     productId: number;
-    /** Obrigatório no backend quando o produto tem tamanhos. */
     productSizeId: number | null;
 }
 
@@ -43,9 +40,9 @@ export interface ComboInput {
     startDate?: string;
     endDate?: string;
     itens: ComboItemInput[];
+    imagem?: ImagemEscolha;
 }
 
-/** Mínimo de produtos que o backend exige em um combo. */
 export const MINIMO_PRODUTOS_COMBO = 2;
 
 function montarCombo(
@@ -66,7 +63,6 @@ function montarCombo(
     };
 }
 
-/** Lista combos com os nomes dos produtos (o GET /combos não traz os produtos). */
 export async function listarCombos(): Promise<Combo[]> {
     const [combos, produtos] = await Promise.all([
         unwrapTodas((page, size) => api.combo.combosGet(undefined, page, size)),
@@ -96,7 +92,6 @@ export async function listarCombos(): Promise<Combo[]> {
     );
 }
 
-// Cada produto entra uma vez no combo (quantidade 1).
 function toItemRequest(item: ComboItemInput) {
     return {
         productId: item.productId,
@@ -118,28 +113,29 @@ function toRequest(input: ComboInput, imageUrl: string | null) {
 }
 
 export async function criarCombo(input: ComboInput): Promise<void> {
-    await unwrap(
-        api.combo.combosPost({
-            combo: toRequest(input, null),
-            products: input.itens.map(toItemRequest),
-        })
+    await aplicarImagem(
+        null,
+        input.imagem ?? SEM_ALTERACAO,
+        (imageUrl) =>
+            unwrap(
+                api.combo.combosPost({
+                    combo: toRequest(input, imageUrl),
+                    products: input.itens.map(toItemRequest),
+                })
+            ),
+        (resposta) => resposta.imageUrl
     );
 }
 
-/**
- * Edita um combo.
- *
- * O PUT /combos/{id} só altera os dados básicos. Os produtos são um sub-recurso, então
- * comparamos o estado atual com o desejado. Os novos entram ANTES dos removidos, porque o
- * backend não deixa o combo ficar com menos de 2 produtos. Não é uma transação: se uma
- * etapa falhar, as anteriores já foram aplicadas, então a lista deve ser recarregada.
- */
 export async function atualizarCombo(
     atual: Combo,
     input: ComboInput
 ): Promise<void> {
-    await unwrap(
-        api.combo.combosIdPut(atual.id, toRequest(input, atual.imageUrl))
+    await aplicarImagem(
+        atual.imageUrl,
+        input.imagem ?? SEM_ALTERACAO,
+        (imageUrl) => unwrap(api.combo.combosIdPut(atual.id, toRequest(input, imageUrl))),
+        (resposta) => resposta.imageUrl
     );
 
     const desejados = new Map(input.itens.map((item) => [item.productId, item]));
@@ -153,7 +149,6 @@ export async function atualizarCombo(
                 api.combo.combosComboIdProductsPost(atual.id, toItemRequest(item))
             );
         } else if (existente.productSizeId !== item.productSizeId) {
-            // Mesmo produto, outro tamanho: atualiza a associação em vez de remover e recriar.
             await unwrap(
                 api.combo.combosComboIdProductsComboProductIdPut(
                     atual.id,

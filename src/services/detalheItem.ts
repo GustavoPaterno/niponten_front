@@ -1,29 +1,22 @@
 import { api } from "@/src/lib/api";
 import { ApiError, unwrap, unwrapTodas } from "@/src/lib/http";
 
-/**
- * Dados da tela de detalhes (/menu/produto/[id]): produto, produto em promoção ou combo.
- * Tudo público no backend. `null` quando o item existe mas não está disponível para pedir.
- */
-
 export interface TamanhoDetalhe {
-    /** Id da associação produto + tamanho, que vai no pedido. */
     productSizeId: number;
     nome: string;
     preco: number;
-    /** Preço sem desconto, quando o tamanho está na promoção. */
     precoOriginal: number | null;
 }
 
 export interface IngredienteDetalhe {
     ingredientId: number;
     nome: string;
+    imagem: string | null;
 }
 
 export interface AdicionalDetalhe extends IngredienteDetalhe {
     preco: number;
     esgotado: boolean;
-    /** Máximo de unidades deste adicional no produto (configurado no admin). */
     maximo: number;
 }
 
@@ -34,15 +27,14 @@ export interface DetalheProduto {
     descricao: string;
     imagem: string | null;
     tamanhos: TamanhoDetalhe[];
-    /** Ingredientes que vêm no produto (o cliente pode remover). */
     ingredientes: IngredienteDetalhe[];
-    /** Adicionais liberados para este produto (o backend recusa os outros). */
     adicionais: AdicionalDetalhe[];
     promocao: { id: number; titulo: string; desconto: number } | null;
 }
 
 export interface ItemDoCombo {
     nome: string;
+    imagem: string | null;
     tamanho: string | null;
     quantidade: number;
 }
@@ -60,7 +52,6 @@ export interface DetalheCombo {
 
 export type DetalheItem = DetalheProduto | DetalheCombo;
 
-/** LocalDateTime do backend ("2026-11-05T10:00:00") comparado com agora, no horário local. */
 function dentroDoPeriodo(inicio?: string | null, fim?: string | null): boolean {
     const agora = Date.now();
 
@@ -71,7 +62,6 @@ function dentroDoPeriodo(inicio?: string | null, fim?: string | null): boolean {
     return !(fim && new Date(fim).getTime() < agora);
 }
 
-/** 404 vira "não encontrado" (null); outros erros sobem para a tela mostrar. */
 async function ouNulo<T>(promessa: Promise<T>): Promise<T | null> {
     try {
         return await promessa;
@@ -102,7 +92,6 @@ export async function buscarDetalheProduto(
     const nomesTamanho = new Map(tamanhos.map((t) => [t.id as number, t.name ?? ""]));
     const porIngrediente = new Map(ingredientes.map((i) => [i.id as number, i]));
 
-    // A promoção só vale se for deste produto, estiver ativa e dentro do período.
     const promocaoValida =
         promocao &&
         promocao.status === "ACTIVE" &&
@@ -150,7 +139,11 @@ export async function buscarDetalheProduto(
         ingredientes: (produto.ingredients ?? [])
             .map((pi) => porIngrediente.get(pi.ingredientId as number))
             .filter((i) => i !== undefined)
-            .map((i) => ({ ingredientId: i.id as number, nome: i.name ?? "" })),
+            .map((i) => ({
+                ingredientId: i.id as number,
+                nome: i.name ?? "",
+                imagem: i.imageUrl || null,
+            })),
         adicionais: (produto.additionalIngredients ?? [])
             .filter((a) => a.status === "ACTIVE")
             .flatMap((a) => {
@@ -161,6 +154,7 @@ export async function buscarDetalheProduto(
                           {
                               ingredientId: ingrediente.id as number,
                               nome: ingrediente.name ?? "",
+                              imagem: ingrediente.imageUrl || null,
                               preco: ingrediente.price ?? 0,
                               esgotado: ingrediente.status !== "ACTIVE",
                               maximo: a.maximumQuantity ?? 1,
@@ -199,6 +193,7 @@ export async function buscarDetalheCombo(id: number): Promise<DetalheCombo | nul
 
             return {
                 nome: produto?.name ?? "Produto",
+                imagem: produto?.imageUrl || null,
                 tamanho: tamanho ? (nomesTamanho.get(tamanho.sizeId as number) ?? null) : null,
                 quantidade: a.quantity ?? 1,
             };

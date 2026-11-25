@@ -3,6 +3,7 @@
 import { useId, useRef } from "react";
 import { ExpandMore } from "@mui/icons-material";
 
+import ImagemItem from "@/src/features/menu/components/ImagemItem";
 import { formatCurrency } from "@/src/lib/format";
 import type { AdicionalDetalhe } from "@/src/services/detalheItem";
 
@@ -16,10 +17,6 @@ interface SecaoAdicionaisProps {
     onAlternar: () => void;
 }
 
-/**
- * Lista de adicionais recolhível. Aberta, o cabeçalho fica fixo logo abaixo do header enquanto
- * a pessoa rola a lista, para dar para recolher de qualquer ponto.
- */
 export default function SecaoAdicionais({
     adicionais,
     quantidades,
@@ -35,7 +32,6 @@ export default function SecaoAdicionais({
     const totalPreco = escolhidos.reduce((t, a) => t + a.preco * quantidades[a.ingredientId], 0);
 
     const alternar = () => {
-        // Ao recolher depois de rolar a lista, volta para o começo da seção.
         if (aberto && secao.current && secao.current.getBoundingClientRect().top < 80) {
             secao.current.scrollIntoView({ behavior: "smooth", block: "start" });
         }
@@ -70,7 +66,6 @@ export default function SecaoAdicionais({
             </button>
 
             {aberto && (
-                // Um adicional por linha, ocupando a largura toda, em qualquer tela.
                 <ul
                     id={idLista}
                     className="divide-y divide-black/5 rounded-b-xl bg-white px-4 ring-1 ring-black/10 md:px-6"
@@ -86,6 +81,12 @@ export default function SecaoAdicionais({
                             key={adicional.ingredientId}
                             className="flex items-center gap-3 py-2.5 md:py-3"
                         >
+                            <ImagemItem
+                                src={adicional.imagem}
+                                alt={adicional.nome}
+                                className={`h-12 w-12 shrink-0 rounded-lg ${adicional.esgotado ? "opacity-60" : ""}`}
+                            />
+
                             <div className="min-w-0 flex-1">
                                 <p className={`truncate ${adicional.esgotado ? "text-tinta-suave/70" : ""}`}>
                                     {adicional.nome}

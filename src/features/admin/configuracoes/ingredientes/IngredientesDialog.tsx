@@ -17,6 +17,8 @@ import Button, {
     ButtonColor,
 } from "@/src/components/button/Button";
 import { parsePreco } from "@/src/lib/format";
+import ImagemUpload from "@/src/components/image/ImagemUpload";
+import { SEM_ALTERACAO, type ImagemEscolha } from "@/src/lib/uploadImagem";
 import type {
     Ingrediente,
     IngredienteInput,
@@ -25,10 +27,8 @@ import type {
 
 interface IngredientesDialogProps {
     open: boolean;
-    /** Ingrediente sendo editado. `null` = criando um novo. */
     ingrediente: Ingrediente | null;
     onClose: () => void;
-    /** Devolve true quando salvou (o dialog é fechado por quem chama). */
     onSave: (input: IngredienteInput) => Promise<boolean>;
 }
 
@@ -56,7 +56,6 @@ export default function IngredientesDialog({
                 },
             }}
         >
-            {/* O formulário só existe enquanto o dialog está aberto: o estado reinicia a cada abertura. */}
             <IngredientesForm
                 ingrediente={ingrediente}
                 onClose={onClose}
@@ -87,6 +86,7 @@ function IngredientesForm({
     const [status, setStatus] = useState<IngredienteStatus>(
         ingrediente?.status ?? "ACTIVE"
     );
+    const [imagem, setImagem] = useState<ImagemEscolha>(SEM_ALTERACAO);
     const [tentouSalvar, setTentouSalvar] = useState(false);
     const [salvando, setSalvando] = useState(false);
 
@@ -109,6 +109,7 @@ function IngredientesForm({
             description: descricao,
             price: precoNumero,
             status,
+            imagem,
         });
 
         if (!salvou) {
@@ -118,7 +119,6 @@ function IngredientesForm({
 
     return (
         <>
-            {/* Header */}
             <DialogTitle
                 sx={{
                     px: { xs: 2, sm: 4 },
@@ -151,9 +151,15 @@ function IngredientesForm({
                 </div>
             </DialogTitle>
 
-            {/* Content */}
             <DialogContent sx={{ px: { xs: 2, sm: 4 }, py: 3 }}>
                 <div className="flex flex-col gap-6 pt-5">
+                    <ImagemUpload
+                        urlAtual={ingrediente?.imageUrl ?? null}
+                        value={imagem}
+                        onChange={setImagem}
+                        disabled={salvando}
+                    />
+
                     <LimitedTextField
                         label="Nome do ingrediente"
                         placeholder="Ex: Queijo"
