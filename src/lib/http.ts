@@ -61,6 +61,18 @@ const TRADUCOES: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
                 : "Há um ingrediente repetido neste produto.",
     ],
     [
+        /^Not enough points: (\d+) requested, (\d+) available/,
+        (m) => `Saldo insuficiente: foram pedidos ${m[1]} pontos, mas há ${m[2]} disponíveis.`,
+    ],
+    [
+        /^points must not be zero/,
+        () => "A quantidade de pontos não pode ser zero.",
+    ],
+    [
+        /^Not allowed to access user/,
+        () => "Você não tem permissão para ver os dados deste cliente.",
+    ],
+    [
         /^Email already registered/,
         () => "Este e-mail já está cadastrado. Tente entrar ou use outro e-mail.",
     ],

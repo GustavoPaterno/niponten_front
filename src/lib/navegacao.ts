@@ -61,6 +61,16 @@ export const MODULOS: ModuloNavegacao[] = [
         ],
     },
     {
+        titulo: "Fidelidade",
+        itens: [
+            {
+                label: "Pontos",
+                href: "/admin/configuracoes/pontos",
+                permissao: "MANAGE_POINTS",
+            },
+        ],
+    },
+    {
         titulo: "Equipe",
         itens: [
             {
