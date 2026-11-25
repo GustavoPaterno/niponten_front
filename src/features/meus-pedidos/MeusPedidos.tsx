@@ -70,6 +70,8 @@ function etapas(tipo: TipoEntregaCliente): { status: Status3; label: string }[] 
 /** Texto curto do momento atual, para o cliente. */
 function frase(p: MeuPedido): string {
     switch (p.status) {
+        case "AWAITING_PAYMENT":
+            return "Aguardando a confirmação do pagamento.";
         case "PENDING":
             return "Recebemos seu pedido e já vamos começar.";
         case "IN_PREPARATION":

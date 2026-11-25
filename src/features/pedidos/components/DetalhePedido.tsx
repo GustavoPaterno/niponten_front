@@ -25,6 +25,7 @@ import { campoTexto } from "../estilosMui";
 import { ICONE_TIPO, corDoTempo, formatarTempo } from "./CardPedido";
 
 const COR_STATUS: Record<StatusPedido, string> = {
+    AWAITING_PAYMENT: "bg-amber-50 text-amber-800",
     PENDING: "bg-erro-fundo text-erro",
     IN_PREPARATION: "bg-amber-100 text-amber-800",
     READY: "bg-blue-100 text-blue-700",
