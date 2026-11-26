@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { CircularProgress } from "@mui/material";
 import { CheckCircle, ContentCopyOutlined, ErrorOutlined, HourglassTopOutlined } from "@mui/icons-material";
 import { CardPayment, initMercadoPago } from "@mercadopago/sdk-react";
@@ -22,6 +22,12 @@ import {
 
 // Enquanto espera o pagamento, confere o status nesse intervalo, além dos eventos em tempo real.
 const CONFERIR_MS = 4_000;
+
+// Uma parcela: o pedido é à vista. Fica fora do componente para não mudar de referência.
+const CUSTOMIZACAO_CARTAO = { paymentMethods: { minInstallments: 1, maxInstallments: 1 } };
+
+type EnviarCartao = NonNullable<ComponentProps<typeof CardPayment>["onSubmit"]>;
+type FalhaCartao = NonNullable<ComponentProps<typeof CardPayment>["onError"]>;
 
 let mercadoPagoIniciado = false;
 
@@ -262,6 +268,47 @@ function PagamentoCartao({
     onPago: (pagamento: Pagamento) => void;
 }) {
     const [erro, setErro] = useState<string | null>(null);
+    const onPagoAtual = useRef(onPago);
+
+    useEffect(() => {
+        onPagoAtual.current = onPago;
+    });
+
+    // O CardPayment recria o Brick (e apaga o que o cliente digitou) sempre que uma destas props
+    // muda de referência, e este componente re-renderiza a cada segundo (relógio do Pix) e a cada
+    // conferência do status. Por isso todas são estáveis.
+    const inicializacao = useMemo(() => ({ amount: pedido.total }), [pedido.total]);
+
+    const enviar = useCallback<EnviarCartao>(
+        async (dados) => {
+            setErro(null);
+
+            try {
+                onPagoAtual.current(
+                    await pagarComCartao(pedido.id, pedido.token, {
+                        token: dados.token,
+                        bandeira: dados.payment_method_id,
+                        email: dados.payer?.email,
+                        documento: dados.payer?.identification
+                            ? {
+                                  tipo: dados.payer.identification.type,
+                                  numero: dados.payer.identification.number,
+                              }
+                            : undefined,
+                    })
+                );
+            } catch (e) {
+                setErro(mensagemDeErro(e));
+            }
+        },
+        [pedido.id, pedido.token]
+    );
+
+    const falhar = useCallback<FalhaCartao>((e) => {
+        if (e.type === "critical") {
+            setErro("O formulário do cartão não carregou. Recarregue a página ou pague com Pix.");
+        }
+    }, []);
 
     if (atual?.status === "PENDING") {
         return (
@@ -292,34 +339,10 @@ function PagamentoCartao({
                 // Nova instância a cada tentativa: o token do Brick é de uso único.
                 key={atual?.id ?? "primeira"}
                 locale="pt-BR"
-                initialization={{ amount: pedido.total }}
-                customization={{ paymentMethods: { minInstallments: 1, maxInstallments: 1 } }}
-                onSubmit={async (dados) => {
-                    setErro(null);
-
-                    try {
-                        onPago(
-                            await pagarComCartao(pedido.id, pedido.token, {
-                                token: dados.token,
-                                bandeira: dados.payment_method_id,
-                                email: dados.payer?.email,
-                                documento: dados.payer?.identification
-                                    ? {
-                                          tipo: dados.payer.identification.type,
-                                          numero: dados.payer.identification.number,
-                                      }
-                                    : undefined,
-                            })
-                        );
-                    } catch (e) {
-                        setErro(mensagemDeErro(e));
-                    }
-                }}
-                onError={(e) => {
-                    if (e.type === "critical") {
-                        setErro("O formulário do cartão não carregou. Recarregue a página ou pague com Pix.");
-                    }
-                }}
+                initialization={inicializacao}
+                customization={CUSTOMIZACAO_CARTAO}
+                onSubmit={enviar}
+                onError={falhar}
             />
         </div>
     );
