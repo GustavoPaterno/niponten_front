@@ -23,6 +23,9 @@ export const metadata: Metadata = {
     title: "Marusan Pastelaria",
     description:
         "Peça pastéis, pizzas, chapeado e cachorro quente da Marusan, na Ilha da Figueira em Jaraguá do Sul.",
+    icons: {
+        icon: { url: "/images/marusan-icon.png", type: "image/png", sizes: "512x512" },
+    },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
