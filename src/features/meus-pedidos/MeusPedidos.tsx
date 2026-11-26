@@ -324,6 +324,9 @@ function CartaoPedido({
     // O cliente cancela até o pedido começar a ser preparado.
     const podeCancelar = pedido.status === "AWAITING_PAYMENT" || pedido.status === "PENDING";
     const pagamento = resumoPagamento(pedido);
+    // O formulário do cartão (Brick do Mercado Pago) precisa de uns 300 px, mais do que uma coluna da
+    // grade no computador. O pedido aguardando pagamento ocupa a linha toda, com o pagamento ao lado.
+    const largo = aguardandoPagamento;
 
     useEffect(() => {
         if (destacado) {
@@ -364,98 +367,139 @@ function CartaoPedido({
     return (
         <article
             ref={artigo}
-            className={`overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ${destacado ? "ring-2 ring-marca" : "ring-black/5"}`}
+            className={`overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ${destacado ? "ring-2 ring-marca" : "ring-black/5"} ${
+                largo ? "md:col-span-full" : ""
+            }`}
         >
-            <button type="button" onClick={alternar} aria-expanded={aberto} className="flex w-full flex-col gap-2.5 p-3.5 text-left">
-                <div className="flex items-start justify-between gap-3">
-                    <div>
-                        <p className="font-display text-base font-extrabold tabular-nums">#{pedido.codigo}</p>
-                        <p className="flex items-center gap-1.5 text-sm text-tinta-suave">
-                            <IconeTipo sx={{ fontSize: 18 }} />
-                            {NOME_TIPO[pedido.tipo]}, {data(pedido.criadoEm)}
-                        </p>
-                    </div>
-                    <div className="text-right">
-                        <p className="font-display text-lg font-extrabold tabular-nums">{formatCurrency(pedido.total)}</p>
-                        <p className="text-xs text-tinta-suave">
-                            {pedido.quantidadeItens} {pedido.quantidadeItens === 1 ? "item" : "itens"}
-                        </p>
-                    </div>
-                </div>
+            <div className={largo ? "md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] md:items-start" : undefined}>
+                <div className="min-w-0">
+                    <button type="button" onClick={alternar} aria-expanded={aberto} className="flex w-full flex-col gap-2.5 p-3.5 text-left">
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <p className="font-display text-base font-extrabold tabular-nums">#{pedido.codigo}</p>
+                                <p className="flex items-center gap-1.5 text-sm text-tinta-suave">
+                                    <IconeTipo sx={{ fontSize: 18 }} />
+                                    {NOME_TIPO[pedido.tipo]}, {data(pedido.criadoEm)}
+                                </p>
+                            </div>
+                            <div className="text-right">
+                                <p className="font-display text-lg font-extrabold tabular-nums">{formatCurrency(pedido.total)}</p>
+                                <p className="text-xs text-tinta-suave">
+                                    {pedido.quantidadeItens} {pedido.quantidadeItens === 1 ? "item" : "itens"}
+                                </p>
+                            </div>
+                        </div>
 
-                <p className={`text-sm font-medium ${cancelado ? "text-tinta-suave" : ativo ? "text-marca" : "text-green-700"}`}>
-                    {frase(pedido)}
-                </p>
-                {pagamento &&
-                    (pedido.pago && !cancelado ? (
-                        <span className="-mt-1 flex w-fit items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
-                            <CheckCircle sx={{ fontSize: 14 }} />
-                            {pagamento}
+                        <p className={`text-sm font-medium ${cancelado ? "text-tinta-suave" : ativo ? "text-marca" : "text-green-700"}`}>
+                            {frase(pedido)}
+                        </p>
+                        {pagamento &&
+                            (pedido.pago && !cancelado ? (
+                                <span className="-mt-1 flex w-fit items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
+                                    <CheckCircle sx={{ fontSize: 14 }} />
+                                    {pagamento}
+                                </span>
+                            ) : (
+                                <p className="-mt-1.5 text-xs text-tinta-suave">{pagamento}</p>
+                            ))}
+
+                        {/* Barra de etapas: só nos pedidos em andamento. */}
+                        {ativo && (
+                            <ol className="flex items-start gap-1" aria-label="Andamento do pedido">
+                                {lista.map((etapa, i) => {
+                                    const feita = i <= atual;
+
+                                    return (
+                                        <li key={etapa.status} className="flex min-w-0 flex-1 flex-col gap-1.5">
+                                            <span
+                                                className={`h-1.5 rounded-full ${
+                                                    i < atual ? "bg-marca" : i === atual ? "animate-pulse bg-marca" : "bg-black/10"
+                                                }`}
+                                            />
+                                            <span
+                                                className={`truncate text-[11px] leading-tight sm:text-xs ${
+                                                    feita ? "font-semibold text-tinta" : "text-tinta-suave/70"
+                                                }`}
+                                                title={etapa.label}
+                                            >
+                                                {etapa.label}
+                                            </span>
+                                        </li>
+                                    );
+                                })}
+                            </ol>
+                        )}
+
+                        {!ativo && (
+                            <span
+                                className={`flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                    cancelado ? "bg-chapa text-tinta-suave" : "bg-green-100 text-green-700"
+                                }`}
+                            >
+                                {!cancelado && <CheckCircle sx={{ fontSize: 14 }} />}
+                                {cancelado ? "Cancelado" : "Concluído"}
+                            </span>
+                        )}
+
+                        <span className="flex items-center justify-center gap-1 text-xs font-medium text-tinta-suave/70">
+                            {aberto ? "Ocultar itens" : "Ver itens"}
+                            <ExpandMore sx={{ fontSize: 18 }} className={`transition-transform ${aberto ? "rotate-180" : ""}`} />
                         </span>
-                    ) : (
-                        <p className="-mt-1.5 text-xs text-tinta-suave">{pagamento}</p>
-                    ))}
+                    </button>
 
-                {/* Barra de etapas: só nos pedidos em andamento. */}
-                {ativo && (
-                    <ol className="flex items-start gap-1" aria-label="Andamento do pedido">
-                        {lista.map((etapa, i) => {
-                            const feita = i <= atual;
-
-                            return (
-                                <li key={etapa.status} className="flex min-w-0 flex-1 flex-col gap-1.5">
-                                    <span
-                                        className={`h-1.5 rounded-full ${
-                                            i < atual ? "bg-marca" : i === atual ? "animate-pulse bg-marca" : "bg-black/10"
-                                        }`}
-                                    />
-                                    <span
-                                        className={`truncate text-[11px] leading-tight sm:text-xs ${
-                                            feita ? "font-semibold text-tinta" : "text-tinta-suave/70"
-                                        }`}
-                                        title={etapa.label}
-                                    >
-                                        {etapa.label}
-                                    </span>
-                                </li>
-                            );
-                        })}
-                    </ol>
-                )}
-
-                {!ativo && (
-                    <span
-                        className={`flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                            cancelado ? "bg-chapa text-tinta-suave" : "bg-green-100 text-green-700"
-                        }`}
-                    >
-                        {!cancelado && <CheckCircle sx={{ fontSize: 14 }} />}
-                        {cancelado ? "Cancelado" : "Concluído"}
-                    </span>
-                )}
-
-                <span className="flex items-center justify-center gap-1 text-xs font-medium text-tinta-suave/70">
-                    {aberto ? "Ocultar itens" : "Ver itens"}
-                    <ExpandMore sx={{ fontSize: 18 }} className={`transition-transform ${aberto ? "rotate-180" : ""}`} />
-                </span>
-            </button>
-
-            {(aguardandoPagamento || (ativo && podeCancelar)) && (
-                <div className="flex flex-col gap-2 px-3.5 pb-3.5">
-                    {aguardandoPagamento && (
-                        <PagamentoOnline pedido={pedido} gerarPixAoAbrir={destacado} onAprovado={onMudou} />
-                    )}
-                    {ativo && podeCancelar && (
-                        <button
-                            type="button"
-                            onClick={() => setConfirmarCancelamento(true)}
-                            className="self-start text-xs font-semibold text-tinta-suave underline-offset-2 hover:underline"
-                        >
-                            Cancelar pedido
-                        </button>
-                    )}
+                    <Collapse in={aberto} unmountOnExit>
+                        <div className="border-t border-black/5 px-3.5 py-3">
+                            {!detalhe && !erroDetalhe && (
+                                <div className="flex justify-center py-3">
+                                    <CircularProgress size={22} sx={{ color: "var(--primary)" }} />
+                                </div>
+                            )}
+                            {erroDetalhe && <p className="py-2 text-sm text-erro">{erroDetalhe}</p>}
+                            {detalhe && (
+                                <ul className="flex flex-col gap-2 text-sm">
+                                    {(detalhe.items ?? []).map((item, i) => (
+                                        <li key={i} className="flex justify-between gap-3">
+                                            <span className="min-w-0">
+                                                <span className="font-semibold text-marca">{item.quantity}x</span>{" "}
+                                                {item.name}
+                                                {item.sizeName && <span className="text-tinta-suave"> ({item.sizeName})</span>}
+                                                {(item.additionals ?? []).length > 0 && (
+                                                    <span className="block text-xs text-tinta-suave">
+                                                        + {(item.additionals ?? []).map((a) => a.name).join(", ")}
+                                                    </span>
+                                                )}
+                                            </span>
+                                            <span className="shrink-0 tabular-nums">{formatCurrency(item.total)}</span>
+                                        </li>
+                                    ))}
+                                    {detalhe.cancelReason && (
+                                        <li className="rounded-lg bg-chapa px-3 py-2 text-tinta-suave">
+                                            Motivo do cancelamento: {detalhe.cancelReason}
+                                        </li>
+                                    )}
+                                </ul>
+                            )}
+                        </div>
+                    </Collapse>
                 </div>
-            )}
+
+                {(aguardandoPagamento || (ativo && podeCancelar)) && (
+                    <div className={`flex flex-col gap-2 px-3.5 pb-3.5 ${largo ? "md:pl-0 md:pt-3.5" : ""}`}>
+                        {aguardandoPagamento && (
+                            <PagamentoOnline pedido={pedido} gerarPixAoAbrir={destacado} onAprovado={onMudou} />
+                        )}
+                        {ativo && podeCancelar && (
+                            <button
+                                type="button"
+                                onClick={() => setConfirmarCancelamento(true)}
+                                className="self-start text-xs font-semibold text-tinta-suave underline-offset-2 hover:underline"
+                            >
+                                Cancelar pedido
+                            </button>
+                        )}
+                    </div>
+                )}
+            </div>
 
             <ConfirmDialog
                 open={confirmarCancelamento}
@@ -471,41 +515,6 @@ function CartaoPedido({
                     ? "O valor pago volta pelo mesmo meio de pagamento."
                     : "O pedido não será preparado."}
             </ConfirmDialog>
-
-            <Collapse in={aberto} unmountOnExit>
-                <div className="border-t border-black/5 px-3.5 py-3">
-                    {!detalhe && !erroDetalhe && (
-                        <div className="flex justify-center py-3">
-                            <CircularProgress size={22} sx={{ color: "var(--primary)" }} />
-                        </div>
-                    )}
-                    {erroDetalhe && <p className="py-2 text-sm text-erro">{erroDetalhe}</p>}
-                    {detalhe && (
-                        <ul className="flex flex-col gap-2 text-sm">
-                            {(detalhe.items ?? []).map((item, i) => (
-                                <li key={i} className="flex justify-between gap-3">
-                                    <span className="min-w-0">
-                                        <span className="font-semibold text-marca">{item.quantity}x</span>{" "}
-                                        {item.name}
-                                        {item.sizeName && <span className="text-tinta-suave"> ({item.sizeName})</span>}
-                                        {(item.additionals ?? []).length > 0 && (
-                                            <span className="block text-xs text-tinta-suave">
-                                                + {(item.additionals ?? []).map((a) => a.name).join(", ")}
-                                            </span>
-                                        )}
-                                    </span>
-                                    <span className="shrink-0 tabular-nums">{formatCurrency(item.total)}</span>
-                                </li>
-                            ))}
-                            {detalhe.cancelReason && (
-                                <li className="rounded-lg bg-chapa px-3 py-2 text-tinta-suave">
-                                    Motivo do cancelamento: {detalhe.cancelReason}
-                                </li>
-                            )}
-                        </ul>
-                    )}
-                </div>
-            </Collapse>
         </article>
     );
 }
