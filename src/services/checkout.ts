@@ -228,6 +228,8 @@ export interface MeuPedido {
     /** ONLINE: pago pelo site, com Pix ou cartão; IN_PERSON: na entrega ou no balcão. */
     canal: PaymentChannel;
     pago: boolean;
+    /** E-mail do visitante, informado no checkout. Cliente logado: `null` (fica na sessão). */
+    email: string | null;
 }
 
 export const STATUS_ATIVOS: Status3[] = [
@@ -251,6 +253,7 @@ function deResumo(p: OrderSummaryResponse): MeuPedido {
         metodo: p.paymentMethod ?? null,
         canal: p.paymentChannel ?? "IN_PERSON",
         pago: p.paid ?? false,
+        email: null,
     };
 }
 
@@ -267,6 +270,7 @@ function deDetalhe(p: OrderResponse, token: string): MeuPedido {
         metodo: p.paymentMethod ?? null,
         canal: p.paymentChannel ?? "IN_PERSON",
         pago: p.paid ?? false,
+        email: p.guestEmail ?? null,
     };
 }
 

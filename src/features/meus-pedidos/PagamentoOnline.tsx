@@ -5,6 +5,7 @@ import { CircularProgress } from "@mui/material";
 import { CheckCircle, ContentCopyOutlined, ErrorOutlined, HourglassTopOutlined } from "@mui/icons-material";
 import { CardPayment, initMercadoPago } from "@mercadopago/sdk-react";
 
+import { useSessao } from "@/src/components/auth/SessaoProvider";
 import { useToast } from "@/src/components/feedback/ToastProvider";
 import { formatCurrency } from "@/src/lib/format";
 import { mensagemDeErro } from "@/src/lib/http";
@@ -268,7 +269,10 @@ function PagamentoCartao({
     onPago: (pagamento: Pagamento) => void;
 }) {
     const [erro, setErro] = useState<string | null>(null);
+    const { me } = useSessao();
     const onPagoAtual = useRef(onPago);
+    // O Brick pede o e-mail do pagador; com ele já conhecido, o cliente não digita de novo.
+    const email = pedido.email ?? (me?.type === "CLIENT" ? me.email : null);
 
     useEffect(() => {
         onPagoAtual.current = onPago;
@@ -277,7 +281,10 @@ function PagamentoCartao({
     // O CardPayment recria o Brick (e apaga o que o cliente digitou) sempre que uma destas props
     // muda de referência, e este componente re-renderiza a cada segundo (relógio do Pix) e a cada
     // conferência do status. Por isso todas são estáveis.
-    const inicializacao = useMemo(() => ({ amount: pedido.total }), [pedido.total]);
+    const inicializacao = useMemo(
+        () => ({ amount: pedido.total, payer: email ? { email } : undefined }),
+        [pedido.total, email]
+    );
 
     const enviar = useCallback<EnviarCartao>(
         async (dados) => {
