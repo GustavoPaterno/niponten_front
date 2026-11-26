@@ -2,16 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CircularProgress, Collapse } from "@mui/material";
-import {
-    CheckCircle,
-    DeliveryDiningOutlined,
-    ExpandMore,
-    ReceiptLongOutlined,
-    RestaurantOutlined,
-    StorefrontOutlined,
-} from "@mui/icons-material";
+import { CheckCircle, ExpandMore, PaymentsOutlined, ReceiptLongOutlined } from "@mui/icons-material";
 import type { OrderResponse, Status3 } from "@joao.sumi/nippon-ten";
 
 import { useSessao } from "@/src/components/auth/SessaoProvider";
@@ -29,26 +22,14 @@ import {
     type TipoEntregaCliente,
 } from "@/src/services/checkout";
 
-import PagamentoOnline from "./PagamentoOnline";
+import { ICONE_TIPO, NOME_TIPO, data } from "./rotulos";
 
 // Reserva: além dos eventos em tempo real, a lista se atualiza nesse intervalo.
 const ATUALIZAR_MS = 20_000;
 
-const ICONE_TIPO = {
-    DELIVERY: DeliveryDiningOutlined,
-    PICKUP: StorefrontOutlined,
-    DINE_IN: RestaurantOutlined,
-} as const;
-
 // Uma coluna no celular; a partir de md, grade que usa a largura toda.
 // items-start: abrir os itens de um card não estica os vizinhos da mesma linha.
 const GRADE = "grid grid-cols-1 items-start gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3 2xl:grid-cols-4";
-
-const NOME_TIPO: Record<TipoEntregaCliente, string> = {
-    DELIVERY: "Delivery",
-    PICKUP: "Retirada",
-    DINE_IN: "No local",
-};
 
 const NOME_METODO: Record<string, string> = { PIX: "Pix", CARD: "Cartão", CASH: "Dinheiro" };
 
@@ -101,17 +82,6 @@ function frase(p: MeuPedido): string {
     }
 }
 
-function data(iso: string): string {
-    return iso
-        ? new Date(iso).toLocaleString("pt-BR", {
-              day: "2-digit",
-              month: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-          })
-        : "";
-}
-
 /** Situação do pagamento, numa linha. */
 function resumoPagamento(p: MeuPedido): string | null {
     if (!p.metodo) {
@@ -134,8 +104,12 @@ function resumoPagamento(p: MeuPedido): string | null {
 
 export default function MeusPedidos() {
     const { me, carregando } = useSessao();
-    // Vindo do checkout com pagamento online: abre o pagamento desse pedido.
-    const pagar = Number(useSearchParams().get("pagar")) || null;
+    const router = useRouter();
+    const busca = useSearchParams();
+    // Vindo da tela de pagamento: destaca o pedido que acabou de ser pago.
+    const destaque = Number(busca.get("destaque")) || null;
+    // Link antigo (/pedidos?pagar=id): o pagamento agora tem tela própria.
+    const pagar = Number(busca.get("pagar")) || null;
     const [pedidos, setPedidos] = useState<MeuPedido[] | null>(null);
     const [erro, setErro] = useState<string | null>(null);
 
@@ -182,6 +156,12 @@ export default function MeusPedidos() {
             }
         };
     }, [carregando, carregar]);
+
+    useEffect(() => {
+        if (pagar) {
+            router.replace(`/pedidos/${pagar}/pagamento`);
+        }
+    }, [pagar, router]);
 
     const ativos = (pedidos ?? []).filter((p) => STATUS_ATIVOS.includes(p.status));
 
@@ -271,7 +251,7 @@ export default function MeusPedidos() {
                                     key={p.id}
                                     pedido={p}
                                     ativo
-                                    destacado={p.id === pagar}
+                                    destacado={p.id === destaque}
                                     onMudou={carregarEmBreve}
                                 />
                             ))}
@@ -304,7 +284,7 @@ function CartaoPedido({
 }: {
     pedido: MeuPedido;
     ativo: boolean;
-    /** Acabou de sair do checkout: rola até ele e gera o Pix sem esperar o clique. */
+    /** Acabou de ser pago na tela de pagamento: rola até ele. */
     destacado: boolean;
     onMudou: () => void;
 }) {
@@ -324,9 +304,6 @@ function CartaoPedido({
     // O cliente cancela até o pedido começar a ser preparado.
     const podeCancelar = pedido.status === "AWAITING_PAYMENT" || pedido.status === "PENDING";
     const pagamento = resumoPagamento(pedido);
-    // O formulário do cartão (Brick do Mercado Pago) precisa de uns 300 px, mais do que uma coluna da
-    // grade no computador. O pedido aguardando pagamento ocupa a linha toda, com o pagamento ao lado.
-    const largo = aguardandoPagamento;
 
     useEffect(() => {
         if (destacado) {
@@ -367,139 +344,104 @@ function CartaoPedido({
     return (
         <article
             ref={artigo}
-            className={`overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ${destacado ? "ring-2 ring-marca" : "ring-black/5"} ${
-                largo ? "md:col-span-full" : ""
-            }`}
+            className={`overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ${destacado ? "ring-2 ring-marca" : "ring-black/5"}`}
         >
-            <div className={largo ? "md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] md:items-start" : undefined}>
-                <div className="min-w-0">
-                    <button type="button" onClick={alternar} aria-expanded={aberto} className="flex w-full flex-col gap-2.5 p-3.5 text-left">
-                        <div className="flex items-start justify-between gap-3">
-                            <div>
-                                <p className="font-display text-base font-extrabold tabular-nums">#{pedido.codigo}</p>
-                                <p className="flex items-center gap-1.5 text-sm text-tinta-suave">
-                                    <IconeTipo sx={{ fontSize: 18 }} />
-                                    {NOME_TIPO[pedido.tipo]}, {data(pedido.criadoEm)}
-                                </p>
-                            </div>
-                            <div className="text-right">
-                                <p className="font-display text-lg font-extrabold tabular-nums">{formatCurrency(pedido.total)}</p>
-                                <p className="text-xs text-tinta-suave">
-                                    {pedido.quantidadeItens} {pedido.quantidadeItens === 1 ? "item" : "itens"}
-                                </p>
-                            </div>
-                        </div>
-
-                        <p className={`text-sm font-medium ${cancelado ? "text-tinta-suave" : ativo ? "text-marca" : "text-green-700"}`}>
-                            {frase(pedido)}
+            <button type="button" onClick={alternar} aria-expanded={aberto} className="flex w-full flex-col gap-2.5 p-3.5 text-left">
+                <div className="flex items-start justify-between gap-3">
+                    <div>
+                        <p className="font-display text-base font-extrabold tabular-nums">#{pedido.codigo}</p>
+                        <p className="flex items-center gap-1.5 text-sm text-tinta-suave">
+                            <IconeTipo sx={{ fontSize: 18 }} />
+                            {NOME_TIPO[pedido.tipo]}, {data(pedido.criadoEm)}
                         </p>
-                        {pagamento &&
-                            (pedido.pago && !cancelado ? (
-                                <span className="-mt-1 flex w-fit items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
-                                    <CheckCircle sx={{ fontSize: 14 }} />
-                                    {pagamento}
-                                </span>
-                            ) : (
-                                <p className="-mt-1.5 text-xs text-tinta-suave">{pagamento}</p>
-                            ))}
-
-                        {/* Barra de etapas: só nos pedidos em andamento. */}
-                        {ativo && (
-                            <ol className="flex items-start gap-1" aria-label="Andamento do pedido">
-                                {lista.map((etapa, i) => {
-                                    const feita = i <= atual;
-
-                                    return (
-                                        <li key={etapa.status} className="flex min-w-0 flex-1 flex-col gap-1.5">
-                                            <span
-                                                className={`h-1.5 rounded-full ${
-                                                    i < atual ? "bg-marca" : i === atual ? "animate-pulse bg-marca" : "bg-black/10"
-                                                }`}
-                                            />
-                                            <span
-                                                className={`truncate text-[11px] leading-tight sm:text-xs ${
-                                                    feita ? "font-semibold text-tinta" : "text-tinta-suave/70"
-                                                }`}
-                                                title={etapa.label}
-                                            >
-                                                {etapa.label}
-                                            </span>
-                                        </li>
-                                    );
-                                })}
-                            </ol>
-                        )}
-
-                        {!ativo && (
-                            <span
-                                className={`flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                                    cancelado ? "bg-chapa text-tinta-suave" : "bg-green-100 text-green-700"
-                                }`}
-                            >
-                                {!cancelado && <CheckCircle sx={{ fontSize: 14 }} />}
-                                {cancelado ? "Cancelado" : "Concluído"}
-                            </span>
-                        )}
-
-                        <span className="flex items-center justify-center gap-1 text-xs font-medium text-tinta-suave/70">
-                            {aberto ? "Ocultar itens" : "Ver itens"}
-                            <ExpandMore sx={{ fontSize: 18 }} className={`transition-transform ${aberto ? "rotate-180" : ""}`} />
-                        </span>
-                    </button>
-
-                    <Collapse in={aberto} unmountOnExit>
-                        <div className="border-t border-black/5 px-3.5 py-3">
-                            {!detalhe && !erroDetalhe && (
-                                <div className="flex justify-center py-3">
-                                    <CircularProgress size={22} sx={{ color: "var(--primary)" }} />
-                                </div>
-                            )}
-                            {erroDetalhe && <p className="py-2 text-sm text-erro">{erroDetalhe}</p>}
-                            {detalhe && (
-                                <ul className="flex flex-col gap-2 text-sm">
-                                    {(detalhe.items ?? []).map((item, i) => (
-                                        <li key={i} className="flex justify-between gap-3">
-                                            <span className="min-w-0">
-                                                <span className="font-semibold text-marca">{item.quantity}x</span>{" "}
-                                                {item.name}
-                                                {item.sizeName && <span className="text-tinta-suave"> ({item.sizeName})</span>}
-                                                {(item.additionals ?? []).length > 0 && (
-                                                    <span className="block text-xs text-tinta-suave">
-                                                        + {(item.additionals ?? []).map((a) => a.name).join(", ")}
-                                                    </span>
-                                                )}
-                                            </span>
-                                            <span className="shrink-0 tabular-nums">{formatCurrency(item.total)}</span>
-                                        </li>
-                                    ))}
-                                    {detalhe.cancelReason && (
-                                        <li className="rounded-lg bg-chapa px-3 py-2 text-tinta-suave">
-                                            Motivo do cancelamento: {detalhe.cancelReason}
-                                        </li>
-                                    )}
-                                </ul>
-                            )}
-                        </div>
-                    </Collapse>
+                    </div>
+                    <div className="text-right">
+                        <p className="font-display text-lg font-extrabold tabular-nums">{formatCurrency(pedido.total)}</p>
+                        <p className="text-xs text-tinta-suave">
+                            {pedido.quantidadeItens} {pedido.quantidadeItens === 1 ? "item" : "itens"}
+                        </p>
+                    </div>
                 </div>
 
-                {(aguardandoPagamento || (ativo && podeCancelar)) && (
-                    <div className={`flex flex-col gap-2 px-3.5 pb-3.5 ${largo ? "md:pl-0 md:pt-3.5" : ""}`}>
-                        {aguardandoPagamento && (
-                            <PagamentoOnline pedido={pedido} gerarPixAoAbrir={destacado} onAprovado={onMudou} />
-                        )}
-                        {ativo && podeCancelar && (
-                            <button
-                                type="button"
-                                onClick={() => setConfirmarCancelamento(true)}
-                                className="self-start text-xs font-semibold text-tinta-suave underline-offset-2 hover:underline"
-                            >
-                                Cancelar pedido
-                            </button>
-                        )}
-                    </div>
+                <p className={`text-sm font-medium ${cancelado ? "text-tinta-suave" : ativo ? "text-marca" : "text-green-700"}`}>
+                    {frase(pedido)}
+                </p>
+                {pagamento &&
+                    (pedido.pago && !cancelado ? (
+                        <span className="-mt-1 flex w-fit items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
+                            <CheckCircle sx={{ fontSize: 14 }} />
+                            {pagamento}
+                        </span>
+                    ) : (
+                        <p className="-mt-1.5 text-xs text-tinta-suave">{pagamento}</p>
+                    ))}
+
+                {/* Barra de etapas: só nos pedidos em andamento. */}
+                {ativo && (
+                    <ol className="flex items-start gap-1" aria-label="Andamento do pedido">
+                        {lista.map((etapa, i) => {
+                            const feita = i <= atual;
+
+                            return (
+                                <li key={etapa.status} className="flex min-w-0 flex-1 flex-col gap-1.5">
+                                    <span
+                                        className={`h-1.5 rounded-full ${
+                                            i < atual ? "bg-marca" : i === atual ? "animate-pulse bg-marca" : "bg-black/10"
+                                        }`}
+                                    />
+                                    <span
+                                        className={`truncate text-[11px] leading-tight sm:text-xs ${
+                                            feita ? "font-semibold text-tinta" : "text-tinta-suave/70"
+                                        }`}
+                                        title={etapa.label}
+                                    >
+                                        {etapa.label}
+                                    </span>
+                                </li>
+                            );
+                        })}
+                    </ol>
                 )}
-            </div>
+
+                {!ativo && (
+                    <span
+                        className={`flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                            cancelado ? "bg-chapa text-tinta-suave" : "bg-green-100 text-green-700"
+                        }`}
+                    >
+                        {!cancelado && <CheckCircle sx={{ fontSize: 14 }} />}
+                        {cancelado ? "Cancelado" : "Concluído"}
+                    </span>
+                )}
+
+                <span className="flex items-center justify-center gap-1 text-xs font-medium text-tinta-suave/70">
+                    {aberto ? "Ocultar itens" : "Ver itens"}
+                    <ExpandMore sx={{ fontSize: 18 }} className={`transition-transform ${aberto ? "rotate-180" : ""}`} />
+                </span>
+            </button>
+
+            {(aguardandoPagamento || (ativo && podeCancelar)) && (
+                <div className="flex flex-col gap-2 px-3.5 pb-3.5">
+                    {aguardandoPagamento && (
+                        <Link
+                            href={`/pedidos/${pedido.id}/pagamento`}
+                            className="flex items-center justify-center gap-2 rounded-full bg-marca px-5 py-2.5 font-display text-sm font-bold text-white"
+                        >
+                            <PaymentsOutlined sx={{ fontSize: 18 }} />
+                            Pagar agora
+                        </Link>
+                    )}
+                    {ativo && podeCancelar && (
+                        <button
+                            type="button"
+                            onClick={() => setConfirmarCancelamento(true)}
+                            className="self-start text-xs font-semibold text-tinta-suave underline-offset-2 hover:underline"
+                        >
+                            Cancelar pedido
+                        </button>
+                    )}
+                </div>
+            )}
 
             <ConfirmDialog
                 open={confirmarCancelamento}
@@ -515,6 +457,41 @@ function CartaoPedido({
                     ? "O valor pago volta pelo mesmo meio de pagamento."
                     : "O pedido não será preparado."}
             </ConfirmDialog>
+
+            <Collapse in={aberto} unmountOnExit>
+                <div className="border-t border-black/5 px-3.5 py-3">
+                    {!detalhe && !erroDetalhe && (
+                        <div className="flex justify-center py-3">
+                            <CircularProgress size={22} sx={{ color: "var(--primary)" }} />
+                        </div>
+                    )}
+                    {erroDetalhe && <p className="py-2 text-sm text-erro">{erroDetalhe}</p>}
+                    {detalhe && (
+                        <ul className="flex flex-col gap-2 text-sm">
+                            {(detalhe.items ?? []).map((item, i) => (
+                                <li key={i} className="flex justify-between gap-3">
+                                    <span className="min-w-0">
+                                        <span className="font-semibold text-marca">{item.quantity}x</span>{" "}
+                                        {item.name}
+                                        {item.sizeName && <span className="text-tinta-suave"> ({item.sizeName})</span>}
+                                        {(item.additionals ?? []).length > 0 && (
+                                            <span className="block text-xs text-tinta-suave">
+                                                + {(item.additionals ?? []).map((a) => a.name).join(", ")}
+                                            </span>
+                                        )}
+                                    </span>
+                                    <span className="shrink-0 tabular-nums">{formatCurrency(item.total)}</span>
+                                </li>
+                            ))}
+                            {detalhe.cancelReason && (
+                                <li className="rounded-lg bg-chapa px-3 py-2 text-tinta-suave">
+                                    Motivo do cancelamento: {detalhe.cancelReason}
+                                </li>
+                            )}
+                        </ul>
+                    )}
+                </div>
+            </Collapse>
         </article>
     );
 }

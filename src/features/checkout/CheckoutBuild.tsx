@@ -127,7 +127,7 @@ export default function CheckoutBuild() {
                 // Pagamento online: o pedido existe, mas só vai para a cozinha depois de pago.
                 if (pedido.canal === "ONLINE") {
                     toast.success(`Pedido #${pedido.codigo} criado. Agora é só pagar.`);
-                    router.push(`/pedidos?pagar=${pedido.id}`);
+                    router.push(`/pedidos/${pedido.id}/pagamento`);
 
                     return;
                 }

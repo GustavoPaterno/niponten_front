@@ -54,7 +54,8 @@ function tempoRestante(expiraEm: string | null, agora: number): string | null {
 /**
  * Pagamento de um pedido online que ainda espera o pagamento (AWAITING_PAYMENT). Pix: mostra o QR
  * code e o copia e cola, e gera um novo se o anterior expirou. Cartão: formulário do Mercado Pago
- * (Card Payment Brick). Confere o status sozinho e avisa quando o pagamento é aprovado.
+ * (Card Payment Brick). Confere o status sozinho e chama `onAprovado` quando o pagamento é aprovado.
+ * Usado na tela de pagamento do pedido (`PagamentoPedido`).
  */
 export default function PagamentoOnline({
     pedido,
@@ -114,13 +115,13 @@ export default function PagamentoOnline({
         return () => clearInterval(relogio);
     }, []);
 
+    // Quem usa o componente avisa o cliente e decide o que vem depois.
     useEffect(() => {
         if (aprovado && !avisouAprovacao.current) {
             avisouAprovacao.current = true;
-            toast.success(`Pagamento do pedido #${pedido.codigo} aprovado!`);
             onAprovado();
         }
-    }, [aprovado, onAprovado, pedido.codigo, toast]);
+    }, [aprovado, onAprovado]);
 
     const novoPix = useCallback(async () => {
         setEnviando(true);

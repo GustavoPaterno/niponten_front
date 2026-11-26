@@ -257,7 +257,7 @@ function deResumo(p: OrderSummaryResponse): MeuPedido {
     };
 }
 
-function deDetalhe(p: OrderResponse, token: string): MeuPedido {
+function deDetalhe(p: OrderResponse, token: string | null): MeuPedido {
     return {
         id: p.id as number,
         codigo: p.code ?? String(p.id),
@@ -303,6 +303,22 @@ export async function listarMeusPedidos(me: Me | null): Promise<MeuPedido[]> {
 
 export async function buscarMeuPedido(id: number, token: string | null): Promise<OrderResponse> {
     return unwrap(api.order.ordersIdGet(id, token ?? undefined));
+}
+
+export interface PedidoComDetalhe {
+    pedido: MeuPedido;
+    detalhe: OrderResponse;
+}
+
+/**
+ * Um pedido pelo id, para a tela de pagamento. Visitante: usa o código de acompanhamento guardado
+ * neste navegador; logado: o login. Sem acesso, o backend responde 401/403/404.
+ */
+export async function carregarMeuPedido(id: number): Promise<PedidoComDetalhe> {
+    const token = lerPedidosLocais().find((l) => l.id === id)?.token ?? null;
+    const detalhe = await buscarMeuPedido(id, token);
+
+    return { pedido: deDetalhe(detalhe, token), detalhe };
 }
 
 /**
