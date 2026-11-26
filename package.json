@@ -12,7 +12,7 @@
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@joao.sumi/nippon-ten": "0.5.0-alpha-SNAPSHOT.202611260256",
+    "@joao.sumi/nippon-ten": "0.6.0-alpha-SNAPSHOT.202611261129",
     "@mercadopago/sdk-react": "1.0.7",
     "@mui/icons-material": "^9.4.0",
     "@mui/material": "^9.3.1",
