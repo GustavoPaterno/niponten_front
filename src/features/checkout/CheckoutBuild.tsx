@@ -26,7 +26,7 @@ import {
     type ConfiguracaoEntrega,
     type EnderecoDoCep,
 } from "@/src/services/entrega";
-import { processarPagamento, type FormaEscolhida } from "@/src/services/pagamento";
+import { opcaoDePagamento, type FormaEscolhida } from "@/src/services/pagamento";
 
 import {
     ContatoSecao,
@@ -120,6 +120,15 @@ export default function CheckoutBuild() {
             onEnviado={(pedido) => {
                 setEnviado(true);
                 limparCarrinho();
+
+                // Pagamento online: o pedido existe, mas só vai para a cozinha depois de pago.
+                if (pedido.canal === "ONLINE") {
+                    toast.success(`Pedido #${pedido.codigo} criado. Agora é só pagar.`);
+                    router.push(`/pedidos?pagar=${pedido.id}`);
+
+                    return;
+                }
+
                 toast.success(`Pedido #${pedido.codigo} enviado! Acompanhe por aqui.`);
                 router.push("/pedidos");
             }}
@@ -134,8 +143,9 @@ interface CheckoutProps {
 }
 
 function Checkout({ me, itens, onEnviado }: CheckoutProps) {
-    const toast = useToast();
     const cliente = me?.type === "CLIENT";
+    // Funcionário lançando pelo balcão: o backend só aceita pagamento presencial.
+    const podePagarOnline = !me || cliente;
     const userId = me?.userId;
 
     const [tipo, setTipo] = useState<TipoEntregaCliente | null>(null);
@@ -277,7 +287,7 @@ function Checkout({ me, itens, onEnviado }: CheckoutProps) {
 
     const erros = {
         tipo: !tipo,
-        forma: !forma,
+        forma: !forma || (!podePagarOnline && opcaoDePagamento(forma).canal === "ONLINE"),
         nome: !cliente && contato.nome.trim().length < 2,
         telefone: !cliente && contato.telefone.replace(/\D/g, "").length < 10,
         // Visitante precisa de e-mail; funcionário pode deixar vazio.
@@ -340,13 +350,8 @@ function Checkout({ me, itens, onEnviado }: CheckoutProps) {
             return;
         }
 
-        // A partir daqui o pedido existe: uma falha no pagamento não pode criar outro.
-        try {
-            await processarPagamento(pedido, forma);
-        } catch (e) {
-            toast.error(e instanceof Error ? e.message : "O pagamento não foi concluído.");
-        }
-
+        // O pagamento online é feito em "Meus pedidos", onde dá para tentar de novo sem refazer o
+        // pedido.
         onEnviado(pedido);
     };
 
@@ -403,7 +408,12 @@ function Checkout({ me, itens, onEnviado }: CheckoutProps) {
                             />
                         )}
 
-                        <PagamentoSecao forma={forma} onChange={setForma} erro={mostrar("forma")} />
+                        <PagamentoSecao
+                            forma={forma}
+                            onChange={setForma}
+                            erro={mostrar("forma")}
+                            online={podePagarOnline}
+                        />
                     </div>
 
                     <ResumoCheckout

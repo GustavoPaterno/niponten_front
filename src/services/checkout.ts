@@ -2,6 +2,8 @@ import type {
     FulfillmentType,
     OrderResponse,
     OrderSummaryResponse,
+    PaymentChannel,
+    PaymentMethod,
     Status3,
 } from "@joao.sumi/nippon-ten";
 
@@ -201,7 +203,13 @@ export async function criarPedido(
         });
     }
 
-    return { id, codigo, total: pedido.total ?? 0, token: criado.trackingToken ?? null };
+    return {
+        id,
+        codigo,
+        total: pedido.total ?? 0,
+        token: criado.trackingToken ?? null,
+        canal: pedido.paymentChannel ?? pagamento.canal,
+    };
 }
 
 /* ---------- Meus pedidos ---------- */
@@ -216,6 +224,10 @@ export interface MeuPedido {
     criadoEm: string;
     /** Código de acompanhamento (pedido de visitante), para abrir os detalhes. */
     token: string | null;
+    metodo: PaymentMethod | null;
+    /** ONLINE: pago pelo site, com Pix ou cartão; IN_PERSON: na entrega ou no balcão. */
+    canal: PaymentChannel;
+    pago: boolean;
 }
 
 export const STATUS_ATIVOS: Status3[] = [
@@ -236,6 +248,9 @@ function deResumo(p: OrderSummaryResponse): MeuPedido {
         quantidadeItens: p.itemCount ?? 0,
         criadoEm: p.createdAt ?? "",
         token: null,
+        metodo: p.paymentMethod ?? null,
+        canal: p.paymentChannel ?? "IN_PERSON",
+        pago: p.paid ?? false,
     };
 }
 
@@ -249,6 +264,9 @@ function deDetalhe(p: OrderResponse, token: string): MeuPedido {
         quantidadeItens: (p.items ?? []).reduce((t, i) => t + (i.quantity ?? 0), 0),
         criadoEm: p.createdAt ?? "",
         token,
+        metodo: p.paymentMethod ?? null,
+        canal: p.paymentChannel ?? "IN_PERSON",
+        pago: p.paid ?? false,
     };
 }
 
@@ -281,4 +299,12 @@ export async function listarMeusPedidos(me: Me | null): Promise<MeuPedido[]> {
 
 export async function buscarMeuPedido(id: number, token: string | null): Promise<OrderResponse> {
     return unwrap(api.order.ordersIdGet(id, token ?? undefined));
+}
+
+/**
+ * O cliente (ou o visitante, pelo código de acompanhamento) cancela o próprio pedido enquanto ele
+ * espera o pagamento ou ainda não começou a ser preparado. Pago online, o backend estorna.
+ */
+export async function cancelarMeuPedido(id: number, token: string | null): Promise<void> {
+    await unwrap(api.order.ordersIdCancelPost(id, { reason: "Cancelado pelo cliente" }, token ?? undefined));
 }

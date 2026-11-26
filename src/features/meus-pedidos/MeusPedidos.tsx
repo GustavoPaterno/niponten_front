@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { CircularProgress, Collapse } from "@mui/material";
 import {
     CheckCircle,
@@ -14,16 +15,21 @@ import {
 import type { OrderResponse, Status3 } from "@joao.sumi/nippon-ten";
 
 import { useSessao } from "@/src/components/auth/SessaoProvider";
+import ConfirmDialog from "@/src/components/dialog/ConfirmDialog";
+import { useToast } from "@/src/components/feedback/ToastProvider";
 import { formatCurrency } from "@/src/lib/format";
 import { mensagemDeErro } from "@/src/lib/http";
 import { linkDeAcesso } from "@/src/lib/navegacao";
 import {
     STATUS_ATIVOS,
     buscarMeuPedido,
+    cancelarMeuPedido,
     listarMeusPedidos,
     type MeuPedido,
     type TipoEntregaCliente,
 } from "@/src/services/checkout";
+
+import PagamentoOnline from "./PagamentoOnline";
 
 // Reserva: além dos eventos em tempo real, a lista se atualiza nesse intervalo.
 const ATUALIZAR_MS = 20_000;
@@ -44,9 +50,13 @@ const NOME_TIPO: Record<TipoEntregaCliente, string> = {
     DINE_IN: "No local",
 };
 
-/** Etapas mostradas ao cliente, conforme o tipo de entrega. */
-function etapas(tipo: TipoEntregaCliente): { status: Status3; label: string }[] {
+const NOME_METODO: Record<string, string> = { PIX: "Pix", CARD: "Cartão", CASH: "Dinheiro" };
+
+/** Etapas mostradas ao cliente, conforme o tipo de entrega e o pagamento. */
+function etapas(tipo: TipoEntregaCliente, online: boolean): { status: Status3; label: string }[] {
     const comuns = [
+        // Pago online, o pedido só chega à cozinha depois da aprovação.
+        ...(online ? [{ status: "AWAITING_PAYMENT" as Status3, label: "Pagamento" }] : []),
         { status: "PENDING" as Status3, label: "Recebido" },
         { status: "IN_PREPARATION" as Status3, label: "Em preparo" },
     ];
@@ -71,7 +81,7 @@ function etapas(tipo: TipoEntregaCliente): { status: Status3; label: string }[] 
 function frase(p: MeuPedido): string {
     switch (p.status) {
         case "AWAITING_PAYMENT":
-            return "Aguardando a confirmação do pagamento.";
+            return "Aguardando o pagamento. O pedido vai para a cozinha assim que ele for aprovado.";
         case "PENDING":
             return "Recebemos seu pedido e já vamos começar.";
         case "IN_PREPARATION":
@@ -102,8 +112,30 @@ function data(iso: string): string {
         : "";
 }
 
+/** Situação do pagamento, numa linha. */
+function resumoPagamento(p: MeuPedido): string | null {
+    if (!p.metodo) {
+        return null;
+    }
+
+    const metodo = NOME_METODO[p.metodo] ?? p.metodo;
+
+    if (p.status === "CANCELLED") {
+        // Pago online e cancelado: o backend estorna sozinho.
+        return p.pago && p.canal === "ONLINE" ? `${metodo} online, estorno solicitado` : `${metodo}, não cobrado`;
+    }
+
+    if (p.canal === "ONLINE") {
+        return p.pago ? `Pagamento aprovado (${metodo})` : `${metodo} online, aguardando pagamento`;
+    }
+
+    return p.pago ? `${metodo}, pago` : `${metodo}, pagar na ${p.tipo === "DELIVERY" ? "entrega" : "retirada"}`;
+}
+
 export default function MeusPedidos() {
     const { me, carregando } = useSessao();
+    // Vindo do checkout com pagamento online: abre o pagamento desse pedido.
+    const pagar = Number(useSearchParams().get("pagar")) || null;
     const [pedidos, setPedidos] = useState<MeuPedido[] | null>(null);
     const [erro, setErro] = useState<string | null>(null);
 
@@ -235,7 +267,13 @@ export default function MeusPedidos() {
                         </h2>
                         <div className={GRADE}>
                             {ativos.map((p) => (
-                                <CartaoPedido key={p.id} pedido={p} ativo />
+                                <CartaoPedido
+                                    key={p.id}
+                                    pedido={p}
+                                    ativo
+                                    destacado={p.id === pagar}
+                                    onMudou={carregarEmBreve}
+                                />
                             ))}
                         </div>
                     </section>
@@ -248,7 +286,7 @@ export default function MeusPedidos() {
                         </h2>
                         <div className={GRADE}>
                             {finalizados.map((p) => (
-                                <CartaoPedido key={p.id} pedido={p} ativo={false} />
+                                <CartaoPedido key={p.id} pedido={p} ativo={false} destacado={false} onMudou={carregarEmBreve} />
                             ))}
                         </div>
                     </section>
@@ -258,15 +296,59 @@ export default function MeusPedidos() {
     );
 }
 
-function CartaoPedido({ pedido, ativo }: { pedido: MeuPedido; ativo: boolean }) {
+function CartaoPedido({
+    pedido,
+    ativo,
+    destacado,
+    onMudou,
+}: {
+    pedido: MeuPedido;
+    ativo: boolean;
+    /** Acabou de sair do checkout: rola até ele e gera o Pix sem esperar o clique. */
+    destacado: boolean;
+    onMudou: () => void;
+}) {
+    const toast = useToast();
     const [aberto, setAberto] = useState(false);
     const [detalhe, setDetalhe] = useState<OrderResponse | null>(null);
     const [erroDetalhe, setErroDetalhe] = useState<string | null>(null);
+    const [confirmarCancelamento, setConfirmarCancelamento] = useState(false);
+    const [cancelando, setCancelando] = useState(false);
+    const artigo = useRef<HTMLElement>(null);
 
     const IconeTipo = ICONE_TIPO[pedido.tipo];
-    const lista = etapas(pedido.tipo);
+    const lista = etapas(pedido.tipo, pedido.canal === "ONLINE");
     const atual = lista.findIndex((e) => e.status === pedido.status);
     const cancelado = pedido.status === "CANCELLED";
+    const aguardandoPagamento = pedido.status === "AWAITING_PAYMENT" && pedido.canal === "ONLINE";
+    // O cliente cancela até o pedido começar a ser preparado.
+    const podeCancelar = pedido.status === "AWAITING_PAYMENT" || pedido.status === "PENDING";
+    const pagamento = resumoPagamento(pedido);
+
+    useEffect(() => {
+        if (destacado) {
+            artigo.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, [destacado]);
+
+    const cancelar = async () => {
+        setCancelando(true);
+
+        try {
+            await cancelarMeuPedido(pedido.id, pedido.token);
+            toast.success(
+                pedido.canal === "ONLINE" && pedido.pago
+                    ? `Pedido #${pedido.codigo} cancelado. O estorno do pagamento foi pedido.`
+                    : `Pedido #${pedido.codigo} cancelado.`
+            );
+            setConfirmarCancelamento(false);
+            onMudou();
+        } catch (e) {
+            toast.error(mensagemDeErro(e));
+        } finally {
+            setCancelando(false);
+        }
+    };
 
     const alternar = () => {
         const abrir = !aberto;
@@ -280,7 +362,10 @@ function CartaoPedido({ pedido, ativo }: { pedido: MeuPedido; ativo: boolean }) 
     };
 
     return (
-        <article className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
+        <article
+            ref={artigo}
+            className={`overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ${destacado ? "ring-2 ring-marca" : "ring-black/5"}`}
+        >
             <button type="button" onClick={alternar} aria-expanded={aberto} className="flex w-full flex-col gap-2.5 p-3.5 text-left">
                 <div className="flex items-start justify-between gap-3">
                     <div>
@@ -301,6 +386,15 @@ function CartaoPedido({ pedido, ativo }: { pedido: MeuPedido; ativo: boolean }) 
                 <p className={`text-sm font-medium ${cancelado ? "text-tinta-suave" : ativo ? "text-marca" : "text-green-700"}`}>
                     {frase(pedido)}
                 </p>
+                {pagamento &&
+                    (pedido.pago && !cancelado ? (
+                        <span className="-mt-1 flex w-fit items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
+                            <CheckCircle sx={{ fontSize: 14 }} />
+                            {pagamento}
+                        </span>
+                    ) : (
+                        <p className="-mt-1.5 text-xs text-tinta-suave">{pagamento}</p>
+                    ))}
 
                 {/* Barra de etapas: só nos pedidos em andamento. */}
                 {ativo && (
@@ -345,6 +439,38 @@ function CartaoPedido({ pedido, ativo }: { pedido: MeuPedido; ativo: boolean }) 
                     <ExpandMore sx={{ fontSize: 18 }} className={`transition-transform ${aberto ? "rotate-180" : ""}`} />
                 </span>
             </button>
+
+            {(aguardandoPagamento || (ativo && podeCancelar)) && (
+                <div className="flex flex-col gap-2 px-3.5 pb-3.5">
+                    {aguardandoPagamento && (
+                        <PagamentoOnline pedido={pedido} gerarPixAoAbrir={destacado} onAprovado={onMudou} />
+                    )}
+                    {ativo && podeCancelar && (
+                        <button
+                            type="button"
+                            onClick={() => setConfirmarCancelamento(true)}
+                            className="self-start text-xs font-semibold text-tinta-suave underline-offset-2 hover:underline"
+                        >
+                            Cancelar pedido
+                        </button>
+                    )}
+                </div>
+            )}
+
+            <ConfirmDialog
+                open={confirmarCancelamento}
+                title={`Cancelar o pedido #${pedido.codigo}?`}
+                confirmText="Cancelar pedido"
+                cancelText="Voltar"
+                danger
+                loading={cancelando}
+                onConfirm={cancelar}
+                onCancel={() => setConfirmarCancelamento(false)}
+            >
+                {pedido.canal === "ONLINE" && pedido.pago
+                    ? "O valor pago volta pelo mesmo meio de pagamento."
+                    : "O pedido não será preparado."}
+            </ConfirmDialog>
 
             <Collapse in={aberto} unmountOnExit>
                 <div className="border-t border-black/5 px-3.5 py-3">
