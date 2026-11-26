@@ -9,6 +9,7 @@ import { useToast } from "@/src/components/feedback/ToastProvider";
 import ImagemItem from "@/src/features/menu/components/ImagemItem";
 import { adicionarAoCarrinho } from "@/src/lib/carrinho";
 import { formatCurrency, formatDate } from "@/src/lib/format";
+import { urlDeImagem } from "@/src/lib/imagem";
 import { mensagemDeErro } from "@/src/lib/http";
 import {
     buscarDetalheCombo,
@@ -44,7 +45,6 @@ export default function ProdutoBuild({ id, combo, promocaoId }: ProdutoBuildProp
     useEffect(() => {
         let cancelado = false;
 
-        // Id inválido na URL (ex.: /menu/produto/abc): nem chama o backend.
         const busca: Promise<DetalheItem | null> = !Number.isInteger(id) || id <= 0
             ? Promise.resolve(null)
             : combo
@@ -100,18 +100,15 @@ export default function ProdutoBuild({ id, combo, promocaoId }: ProdutoBuildProp
     return estado.item.tipo === "COMBO" ? (
         <TelaCombo combo={estado.item} />
     ) : (
-        // A key reinicia as escolhas se a pessoa navegar para outro produto.
         <TelaProduto key={estado.item.id} produto={estado.item} />
     );
 }
 
-/* ---------- Produto (e produto em promoção) ---------- */
 
 function TelaProduto({ produto }: { produto: DetalheProduto }) {
     const router = useRouter();
     const toast = useToast();
 
-    // Começa no tamanho mais barato (a lista já vem ordenada por preço).
     const [tamanhoId, setTamanhoId] = useState(produto.tamanhos[0].productSizeId);
     const [adicionais, setAdicionais] = useState<Record<number, number>>({});
     const [removidos, setRemovidos] = useState<number[]>([]);
@@ -221,6 +218,13 @@ function TelaProduto({ produto }: { produto: DetalheProduto }) {
                                     }`}
                                 >
                                     {removido && <Close sx={{ fontSize: 14 }} />}
+                                    {!removido && urlDeImagem(ingrediente.imagem) && (
+                                        <ImagemItem
+                                            src={ingrediente.imagem}
+                                            alt=""
+                                            className="-ml-1.5 h-6 w-6 rounded-full"
+                                        />
+                                    )}
                                     {removido
                                         ? `Sem ${ingrediente.nome.charAt(0).toLowerCase()}${ingrediente.nome.slice(1)}`
                                         : ingrediente.nome}
@@ -232,7 +236,6 @@ function TelaProduto({ produto }: { produto: DetalheProduto }) {
             )}
             </Topo>
 
-            {/* Só aparece quando o produto tem adicionais liberados no admin. */}
             {produto.adicionais.length > 0 && (
                 <SecaoAdicionais
                     adicionais={produto.adicionais}
@@ -250,7 +253,6 @@ function TelaProduto({ produto }: { produto: DetalheProduto }) {
     );
 }
 
-/* ---------- Combo ---------- */
 
 function TelaCombo({ combo }: { combo: DetalheCombo }) {
     const router = useRouter();
@@ -306,6 +308,11 @@ function TelaCombo({ combo }: { combo: DetalheCombo }) {
                             <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-marca ring-1 ring-black/10">
                                 {item.quantidade}x
                             </span>
+                            <ImagemItem
+                                src={item.imagem}
+                                alt=""
+                                className="h-12 w-12 shrink-0 rounded-lg"
+                            />
                             <span className="flex-1">{item.nome}</span>
                             {item.tamanho && (
                                 <span className="text-sm text-tinta-suave">{item.tamanho}</span>
@@ -321,9 +328,6 @@ function TelaCombo({ combo }: { combo: DetalheCombo }) {
     );
 }
 
-/* ---------- Peças compartilhadas ---------- */
-
-/** No celular, tudo empilhado. A partir de md: texto à esquerda e as escolhas à direita. */
 function Topo({ esquerda, children }: { esquerda: React.ReactNode; children: React.ReactNode }) {
     return (
         <div className="flex flex-col gap-6 md:grid md:grid-cols-2 md:items-start md:gap-12 lg:gap-16">
@@ -336,7 +340,6 @@ function Topo({ esquerda, children }: { esquerda: React.ReactNode; children: Rea
 function useVoltar() {
     const router = useRouter();
 
-    // Volta para onde a pessoa estava; se abriu o link direto, vai para o cardápio.
     return () => {
         if (window.history.length > 1) {
             router.back();
@@ -362,9 +365,7 @@ function Estrutura({
     const voltar = useVoltar();
 
     return (
-        // Largura total em qualquer tela. pb-32 deixa espaço para a barra fixa de adicionar.
         <div className="-mx-2 -mb-2 -mt-2 min-h-[calc(100dvh-4rem)] bg-white pb-32 text-tinta sm:-mx-4 sm:-mb-4 sm:-mt-4">
-            {/* Foto: 4:3 no celular; banner de altura fixa a partir de md. */}
             <div className="relative">
                 <ImagemItem
                     src={imagem}
@@ -386,7 +387,6 @@ function Estrutura({
                 )}
             </div>
 
-            {/* Sem overflow-hidden: ele quebraria o cabeçalho fixo (sticky) dos adicionais. */}
             <div className="relative -mt-6 flex flex-col gap-6 rounded-t-3xl bg-white px-4 pt-6 md:gap-8 md:px-8 md:pt-8 xl:px-12">
                 {children}
             </div>
@@ -477,7 +477,6 @@ function BarraAdicionar({
     onAdicionar: () => void;
 }) {
     return (
-        // Fixa no rodapé da tela em qualquer tamanho. No PC, quantidade e botão ficam à direita.
         <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-black/10 bg-white px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] md:justify-end md:gap-6 md:px-8 md:py-4 xl:px-12">
             <Contador
                 valor={quantidade}

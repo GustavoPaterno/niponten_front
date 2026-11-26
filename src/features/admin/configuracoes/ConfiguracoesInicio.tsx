@@ -7,6 +7,7 @@ import {
     LocalOfferOutlined,
     PeopleOutlined,
     SetMealOutlined,
+    StarsOutlined,
 } from "@mui/icons-material";
 import type { SvgIconComponent } from "@mui/icons-material";
 
@@ -20,6 +21,7 @@ const DETALHES: Record<string, { texto: string; Icone: SvgIconComponent }> = {
     "/admin/configuracoes/produtos": { texto: "Cardápio, preços e tamanhos", Icone: SetMealOutlined },
     "/admin/configuracoes/ingredientes": { texto: "Recheios e adicionais", Icone: Inventory2Outlined },
     "/admin/configuracoes/combos": { texto: "Combos e preços promocionais", Icone: LocalOfferOutlined },
+    "/admin/configuracoes/pontos": { texto: "Programa de pontos e saldo dos clientes", Icone: StarsOutlined },
     "/admin/configuracoes/usuarios": { texto: "Contas da equipe", Icone: PeopleOutlined },
     "/admin/configuracoes/permissoes": { texto: "O que cada cargo pode fazer", Icone: BadgeOutlined },
 };

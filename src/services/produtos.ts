@@ -5,6 +5,7 @@ import type {
 
 import { api } from "@/src/lib/api";
 import { unwrap, unwrapTodas, unwrapVoid } from "@/src/lib/http";
+import { aplicarImagem, SEM_ALTERACAO, type ImagemEscolha } from "@/src/lib/uploadImagem";
 
 import type { Ingrediente } from "./ingredientes";
 import { toIngrediente } from "./ingredientes";
@@ -77,6 +78,8 @@ export interface ProdutoInput {
     ingredientIds: number[];
     sizes: ProdutoTamanhoInput[];
     adicionais: ProdutoAdicionalInput[];
+    /** O que fazer com a imagem. Sem isso, a imagem atual é mantida. */
+    imagem?: ImagemEscolha;
 }
 
 export interface ProdutoDependentes {
@@ -183,18 +186,25 @@ function paraAdicionalRequest(a: ProdutoAdicionalInput) {
  * do produto criado.
  */
 export async function criarProduto(input: ProdutoInput): Promise<void> {
-    const criado = await unwrap(
-        api.product.productsPost({
-            product: {
-                name: input.name.trim(),
-                description: input.description.trim() || undefined,
-                status: input.status,
-            },
-            ingredients: input.ingredientIds.map((ingredientId) => ({
-                ingredientId,
-            })),
-            sizes: input.sizes,
-        })
+    const criado = await aplicarImagem(
+        null,
+        input.imagem ?? SEM_ALTERACAO,
+        (imageUrl) =>
+            unwrap(
+                api.product.productsPost({
+                    product: {
+                        name: input.name.trim(),
+                        description: input.description.trim() || undefined,
+                        imageUrl: imageUrl ?? undefined,
+                        status: input.status,
+                    },
+                    ingredients: input.ingredientIds.map((ingredientId) => ({
+                        ingredientId,
+                    })),
+                    sizes: input.sizes,
+                })
+            ),
+        (resposta) => resposta.imageUrl
     );
 
     if (input.adicionais.length > 0) {
@@ -222,13 +232,19 @@ export async function atualizarProduto(
     atual: Produto,
     input: ProdutoInput
 ): Promise<void> {
-    await unwrap(
-        api.product.productsIdPut(atual.id, {
-            name: input.name.trim(),
-            description: input.description.trim() || undefined,
-            imageUrl: atual.imageUrl ?? undefined,
-            status: input.status,
-        })
+    await aplicarImagem(
+        atual.imageUrl,
+        input.imagem ?? SEM_ALTERACAO,
+        (imageUrl) =>
+            unwrap(
+                api.product.productsIdPut(atual.id, {
+                    name: input.name.trim(),
+                    description: input.description.trim() || undefined,
+                    imageUrl: imageUrl ?? undefined,
+                    status: input.status,
+                })
+            ),
+        (resposta) => resposta.imageUrl
     );
 
     const idsDesejados = new Set(input.ingredientIds);

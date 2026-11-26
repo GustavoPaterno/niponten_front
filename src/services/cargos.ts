@@ -13,6 +13,7 @@ export const PERMISSOES: { valor: Permissao; label: string }[] = [
     { valor: "MANAGE_INGREDIENTS", label: "Ingredientes" },
     { valor: "MANAGE_PROMOTIONS", label: "Promoções" },
     { valor: "MANAGE_ORDERS", label: "Pedidos" },
+    { valor: "MANAGE_POINTS", label: "Pontos" },
 ];
 
 export function labelPermissao(permissao: Permissao): string {
