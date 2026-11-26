@@ -48,7 +48,7 @@ export const NOME_PAGAMENTO: Record<FormaPagamento, string> = {
 export interface Pedido {
     id: number;
     codigo: string;
-    /** Nome do visitante; para cliente cadastrado o backend só manda o id. */
+    /** Nome do visitante ou do cliente cadastrado (nome e sobrenome). */
     cliente: string;
     tipo: TipoEntrega;
     status: StatusPedido;
@@ -59,11 +59,24 @@ export interface Pedido {
     criadoEm: string;
 }
 
+/**
+ * Quem fez o pedido: o visitante informa o nome no checkout; o do cliente cadastrado vem da conta.
+ * "Cliente #id" só sobra para a conta sem nome.
+ */
+export function nomeDoCliente(p: Pick<OrderSummaryResponse, "guestName" | "clientName" | "clientId">): string {
+    return p.guestName?.trim() || p.clientName?.trim() || (p.clientId ? `Cliente #${p.clientId}` : "Cliente");
+}
+
+/** Telefone para a equipe ligar: o do visitante ou o da conta do cliente. */
+export function telefoneDoCliente(p: Pick<OrderResponse, "guestPhone" | "clientPhone">): string | null {
+    return p.guestPhone?.trim() || p.clientPhone?.trim() || null;
+}
+
 function toPedido(p: OrderSummaryResponse): Pedido {
     return {
         id: p.id as number,
         codigo: p.code ?? String(p.id),
-        cliente: p.guestName?.trim() || (p.clientId ? `Cliente #${p.clientId}` : "Cliente"),
+        cliente: nomeDoCliente(p),
         tipo: p.fulfillmentType ?? "PICKUP",
         status: p.status ?? "PENDING",
         pagamento: p.paymentMethod ?? null,

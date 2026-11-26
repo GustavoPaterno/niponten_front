@@ -18,7 +18,9 @@ import {
     cancelarPedido,
     marcarComoPago,
     minutosDesde,
+    nomeDoCliente,
     proximaEtapa,
+    telefoneDoCliente,
     type StatusPedido,
 } from "@/src/services/pedidos";
 
@@ -152,6 +154,7 @@ function Conteudo({
 
     const status = pedido?.status ?? "PENDING";
     const online = pedido?.paymentChannel === "ONLINE";
+    const telefone = pedido ? telefoneDoCliente(pedido) : null;
     const tipo = pedido?.fulfillmentType ?? "PICKUP";
     const proxima = pedido ? proximaEtapa(status, tipo) : null;
     const ativo = status !== "COMPLETED" && status !== "CANCELLED";
@@ -200,13 +203,15 @@ function Conteudo({
                 {pedido && (
                     <div className="flex flex-col gap-6">
                         <Bloco titulo="Cliente">
-                            <p className="font-medium">
-                                {pedido.guestName || (pedido.clientId ? `Cliente #${pedido.clientId}` : "Cliente")}
-                            </p>
-                            {pedido.guestPhone && (
-                                <a href={`tel:${pedido.guestPhone}`} className="text-sm text-marca">
-                                    {pedido.guestPhone}
+                            <p className="font-medium">{nomeDoCliente(pedido)}</p>
+                            {telefone ? (
+                                <a href={`tel:${telefone.replace(/[^\d+]/g, "")}`} className="text-sm text-marca">
+                                    {telefone}
                                 </a>
+                            ) : (
+                                pedido.clientId && (
+                                    <p className="text-sm text-tinta-suave">Sem telefone na conta do cliente.</p>
+                                )
                             )}
                         </Bloco>
 

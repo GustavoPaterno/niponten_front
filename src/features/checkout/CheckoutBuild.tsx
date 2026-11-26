@@ -30,6 +30,7 @@ import { opcaoDePagamento, type FormaEscolhida } from "@/src/services/pagamento"
 
 import {
     ContatoSecao,
+    TelefoneContaSecao,
     EnderecoSecao,
     TipoEntregaSecao,
     type ConsultaCep,
@@ -37,6 +38,8 @@ import {
 } from "./components/EntregaSecoes";
 import PagamentoSecao from "./components/PagamentoSecao";
 import ResumoCheckout from "./components/ResumoCheckout";
+import { telefoneValido } from "@/src/lib/format";
+import { salvarTelefoneDaConta, telefoneDaConta } from "@/src/services/usuarios";
 
 const ENDERECO_VAZIO: EnderecoInput = {
     cep: "",
@@ -150,6 +153,8 @@ function Checkout({ me, itens, onEnviado }: CheckoutProps) {
 
     const [tipo, setTipo] = useState<TipoEntregaCliente | null>(null);
     const [contato, setContato] = useState<Contato>({ nome: "", telefone: "", email: "" });
+    const [precisaTelefone, setPrecisaTelefone] = useState(false);
+    const [telefoneConta, setTelefoneConta] = useState("");
     const [endereco, setEndereco] = useState<EnderecoInput>(ENDERECO_VAZIO);
     const [salvos, setSalvos] = useState<EnderecoSalvo[] | null>(null);
     const [escolhido, setEscolhido] = useState<number | "novo" | null>(null);
@@ -198,6 +203,28 @@ function Checkout({ me, itens, onEnviado }: CheckoutProps) {
             cancelado = true;
         };
     }, []);
+
+    // Conta antiga sem telefone: o checkout pede uma vez e grava na conta, para a equipe ter como
+    // falar com o cliente. Se a consulta falhar, segue sem pedir (o pedido não depende disso).
+    useEffect(() => {
+        if (!cliente || userId === undefined) {
+            return;
+        }
+
+        let cancelado = false;
+
+        telefoneDaConta(userId)
+            .then((atual) => {
+                if (!cancelado) {
+                    setPrecisaTelefone(atual === "");
+                }
+            })
+            .catch(() => undefined);
+
+        return () => {
+            cancelado = true;
+        };
+    }, [cliente, userId]);
 
     // Endereços salvos na conta.
     useEffect(() => {
@@ -289,7 +316,8 @@ function Checkout({ me, itens, onEnviado }: CheckoutProps) {
         tipo: !tipo,
         forma: !forma || (!podePagarOnline && opcaoDePagamento(forma).canal === "ONLINE"),
         nome: !cliente && contato.nome.trim().length < 2,
-        telefone: !cliente && contato.telefone.replace(/\D/g, "").length < 10,
+        telefone: !cliente && !telefoneValido(contato.telefone),
+        telefoneConta: cliente && precisaTelefone && !telefoneValido(telefoneConta),
         // Visitante precisa de e-mail; funcionário pode deixar vazio.
         email: !cliente && (email === "" ? !me : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)),
         cep: digitaEndereco && (digitos(endereco.cep).length !== 8 || cepNaoEncontrado),
@@ -328,6 +356,11 @@ function Checkout({ me, itens, onEnviado }: CheckoutProps) {
         let pedido: PedidoCriado;
 
         try {
+            if (precisaTelefone && userId !== undefined) {
+                await salvarTelefoneDaConta(userId, telefoneConta);
+                setPrecisaTelefone(false);
+            }
+
             pedido = await criarPedido(
                 itens,
                 {
@@ -384,6 +417,14 @@ function Checkout({ me, itens, onEnviado }: CheckoutProps) {
                                     telefone: mostrar("telefone"),
                                     email: mostrar("email"),
                                 }}
+                            />
+                        )}
+
+                        {cliente && precisaTelefone && (
+                            <TelefoneContaSecao
+                                telefone={telefoneConta}
+                                onChange={setTelefoneConta}
+                                erro={mostrar("telefoneConta")}
                             />
                         )}
 

@@ -20,6 +20,7 @@ import {
 } from "@/src/services/checkout";
 
 import Secao, { OpcaoCartao } from "./Secao";
+import { mascararTelefone } from "@/src/lib/format";
 
 const ICONES = {
     DELIVERY: DeliveryDiningOutlined,
@@ -29,16 +30,6 @@ const ICONES = {
 
 // Cantos arredondados nos campos.
 const campo = { "& .MuiOutlinedInput-root": { borderRadius: "12px" } };
-
-/** (11) 91234-5678 */
-function mascararTelefone(valor: string): string {
-    const d = valor.replace(/\D/g, "").slice(0, 11);
-
-    if (d.length <= 2) return d.length ? `(${d}` : "";
-    if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-    if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-}
 
 /** 12345-678 */
 function mascararCep(valor: string): string {
@@ -360,5 +351,38 @@ function OpcaoEndereco({
             </span>
             {marcado && <CheckCircle fontSize="small" className="text-marca" />}
         </button>
+    );
+}
+
+/** Cliente logado de uma conta antiga, sem telefone: pede uma vez e guarda na conta. */
+export function TelefoneContaSecao({
+    telefone,
+    onChange,
+    erro,
+}: {
+    telefone: string;
+    onChange: (telefone: string) => void;
+    erro: boolean;
+}) {
+    return (
+        <Secao titulo="Seu telefone">
+            <TextField
+                label="Telefone (WhatsApp)"
+                value={telefone}
+                onChange={(e) => onChange(mascararTelefone(e.target.value))}
+                autoComplete="tel"
+                fullWidth
+                required
+                placeholder="(11) 91234-5678"
+                error={erro}
+                helperText={
+                    erro
+                        ? "Informe o telefone com DDD."
+                        : "Para a equipe falar com você sobre o pedido. Fica salvo na sua conta."
+                }
+                slotProps={{ htmlInput: { inputMode: "tel" } }}
+                sx={campo}
+            />
+        </Secao>
     );
 }
