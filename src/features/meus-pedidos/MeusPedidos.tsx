@@ -2,51 +2,53 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CircularProgress, Collapse } from "@mui/material";
 import {
+    CancelOutlined,
     CheckCircle,
     DeliveryDiningOutlined,
     ExpandMore,
+    HourglassTopOutlined,
+    LocalFireDepartmentOutlined,
+    PaymentsOutlined,
     ReceiptLongOutlined,
-    RestaurantOutlined,
-    StorefrontOutlined,
+    TaskAltOutlined,
 } from "@mui/icons-material";
+import type { SvgIconComponent } from "@mui/icons-material";
 import type { OrderResponse, Status3 } from "@joao.sumi/nippon-ten";
 
 import { useSessao } from "@/src/components/auth/SessaoProvider";
+import ConfirmDialog from "@/src/components/dialog/ConfirmDialog";
+import { useToast } from "@/src/components/feedback/ToastProvider";
 import { formatCurrency } from "@/src/lib/format";
 import { mensagemDeErro } from "@/src/lib/http";
 import { linkDeAcesso } from "@/src/lib/navegacao";
 import {
     STATUS_ATIVOS,
     buscarMeuPedido,
+    cancelarMeuPedido,
     listarMeusPedidos,
     type MeuPedido,
     type TipoEntregaCliente,
 } from "@/src/services/checkout";
 
+import { ICONE_TIPO, NOME_TIPO, data } from "./rotulos";
+
 // Reserva: além dos eventos em tempo real, a lista se atualiza nesse intervalo.
 const ATUALIZAR_MS = 20_000;
-
-const ICONE_TIPO = {
-    DELIVERY: DeliveryDiningOutlined,
-    PICKUP: StorefrontOutlined,
-    DINE_IN: RestaurantOutlined,
-} as const;
 
 // Uma coluna no celular; a partir de md, grade que usa a largura toda.
 // items-start: abrir os itens de um card não estica os vizinhos da mesma linha.
 const GRADE = "grid grid-cols-1 items-start gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3 2xl:grid-cols-4";
 
-const NOME_TIPO: Record<TipoEntregaCliente, string> = {
-    DELIVERY: "Delivery",
-    PICKUP: "Retirada",
-    DINE_IN: "No local",
-};
+const NOME_METODO: Record<string, string> = { PIX: "Pix", CARD: "Cartão", CASH: "Dinheiro" };
 
-/** Etapas mostradas ao cliente, conforme o tipo de entrega. */
-function etapas(tipo: TipoEntregaCliente): { status: Status3; label: string }[] {
+/** Etapas mostradas ao cliente, conforme o tipo de entrega e o pagamento. */
+function etapas(tipo: TipoEntregaCliente, online: boolean): { status: Status3; label: string }[] {
     const comuns = [
+        // Pago online, o pedido só chega à cozinha depois da aprovação.
+        ...(online ? [{ status: "AWAITING_PAYMENT" as Status3, label: "Pagamento" }] : []),
         { status: "PENDING" as Status3, label: "Recebido" },
         { status: "IN_PREPARATION" as Status3, label: "Em preparo" },
     ];
@@ -71,7 +73,7 @@ function etapas(tipo: TipoEntregaCliente): { status: Status3; label: string }[] 
 function frase(p: MeuPedido): string {
     switch (p.status) {
         case "AWAITING_PAYMENT":
-            return "Aguardando a confirmação do pagamento.";
+            return "Aguardando o pagamento. O pedido vai para a cozinha assim que ele for aprovado.";
         case "PENDING":
             return "Recebemos seu pedido e já vamos começar.";
         case "IN_PREPARATION":
@@ -91,19 +93,59 @@ function frase(p: MeuPedido): string {
     }
 }
 
-function data(iso: string): string {
-    return iso
-        ? new Date(iso).toLocaleString("pt-BR", {
-              day: "2-digit",
-              month: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-          })
-        : "";
+/**
+ * Selo do status no topo do card: cor e ícone próprios, para o cliente achar o pedido pelo estado
+ * sem ler a frase. "Pronto" é o único cheio: é quando o cliente precisa agir (retirar ou receber).
+ */
+function selo(p: MeuPedido): { label: string; classe: string; Icone: SvgIconComponent } {
+    const rotuloDaEtapa = etapas(p.tipo, false).find((e) => e.status === p.status)?.label ?? "";
+
+    switch (p.status) {
+        case "AWAITING_PAYMENT":
+            return { label: "Aguardando pagamento", classe: "bg-amber-100 text-amber-900", Icone: HourglassTopOutlined };
+        case "PENDING":
+            return { label: "Recebido", classe: "bg-sky-100 text-sky-900", Icone: ReceiptLongOutlined };
+        case "IN_PREPARATION":
+            return { label: "Em preparo", classe: "bg-orange-100 text-orange-900", Icone: LocalFireDepartmentOutlined };
+        case "READY":
+            return { label: rotuloDaEtapa, classe: "bg-green-700 text-white", Icone: TaskAltOutlined };
+        case "OUT_FOR_DELIVERY":
+            return { label: "A caminho", classe: "bg-indigo-100 text-indigo-900", Icone: DeliveryDiningOutlined };
+        case "COMPLETED":
+            return { label: rotuloDaEtapa, classe: "bg-green-100 text-green-800", Icone: CheckCircle };
+        case "CANCELLED":
+            return { label: "Cancelado", classe: "bg-erro-fundo text-erro", Icone: CancelOutlined };
+    }
+}
+
+/** Situação do pagamento, numa linha. */
+function resumoPagamento(p: MeuPedido): string | null {
+    if (!p.metodo) {
+        return null;
+    }
+
+    const metodo = NOME_METODO[p.metodo] ?? p.metodo;
+
+    if (p.status === "CANCELLED") {
+        // Pago online e cancelado: o backend estorna sozinho.
+        return p.pago && p.canal === "ONLINE" ? `${metodo} online, estorno solicitado` : `${metodo}, não cobrado`;
+    }
+
+    if (p.canal === "ONLINE") {
+        return p.pago ? `Pagamento aprovado (${metodo})` : `${metodo} online, aguardando pagamento`;
+    }
+
+    return p.pago ? `${metodo}, pago` : `${metodo}, pagar na ${p.tipo === "DELIVERY" ? "entrega" : "retirada"}`;
 }
 
 export default function MeusPedidos() {
     const { me, carregando } = useSessao();
+    const router = useRouter();
+    const busca = useSearchParams();
+    // Vindo da tela de pagamento: destaca o pedido que acabou de ser pago.
+    const destaque = Number(busca.get("destaque")) || null;
+    // Link antigo (/pedidos?pagar=id): o pagamento agora tem tela própria.
+    const pagar = Number(busca.get("pagar")) || null;
     const [pedidos, setPedidos] = useState<MeuPedido[] | null>(null);
     const [erro, setErro] = useState<string | null>(null);
 
@@ -150,6 +192,12 @@ export default function MeusPedidos() {
             }
         };
     }, [carregando, carregar]);
+
+    useEffect(() => {
+        if (pagar) {
+            router.replace(`/pedidos/${pagar}/pagamento`);
+        }
+    }, [pagar, router]);
 
     const ativos = (pedidos ?? []).filter((p) => STATUS_ATIVOS.includes(p.status));
 
@@ -231,11 +279,17 @@ export default function MeusPedidos() {
                 {ativos.length > 0 && (
                     <section className="mt-6 flex flex-col gap-3">
                         <h2 className="font-display text-lg font-bold">
-                            Em andamento <span className="font-normal text-tinta-suave/70">({ativos.length})</span>
+                            Em andamento <span className="font-normal text-tinta-suave">({ativos.length})</span>
                         </h2>
                         <div className={GRADE}>
                             {ativos.map((p) => (
-                                <CartaoPedido key={p.id} pedido={p} ativo />
+                                <CartaoPedido
+                                    key={p.id}
+                                    pedido={p}
+                                    ativo
+                                    destacado={p.id === destaque}
+                                    onMudou={carregarEmBreve}
+                                />
                             ))}
                         </div>
                     </section>
@@ -244,11 +298,11 @@ export default function MeusPedidos() {
                 {finalizados.length > 0 && (
                     <section className="mt-8 flex flex-col gap-3">
                         <h2 className="font-display text-lg font-bold">
-                            Finalizados <span className="font-normal text-tinta-suave/70">({finalizados.length})</span>
+                            Finalizados <span className="font-normal text-tinta-suave">({finalizados.length})</span>
                         </h2>
                         <div className={GRADE}>
                             {finalizados.map((p) => (
-                                <CartaoPedido key={p.id} pedido={p} ativo={false} />
+                                <CartaoPedido key={p.id} pedido={p} ativo={false} destacado={false} onMudou={carregarEmBreve} />
                             ))}
                         </div>
                     </section>
@@ -258,15 +312,60 @@ export default function MeusPedidos() {
     );
 }
 
-function CartaoPedido({ pedido, ativo }: { pedido: MeuPedido; ativo: boolean }) {
+function CartaoPedido({
+    pedido,
+    ativo,
+    destacado,
+    onMudou,
+}: {
+    pedido: MeuPedido;
+    ativo: boolean;
+    /** Acabou de ser pago na tela de pagamento: rola até ele. */
+    destacado: boolean;
+    onMudou: () => void;
+}) {
+    const toast = useToast();
     const [aberto, setAberto] = useState(false);
     const [detalhe, setDetalhe] = useState<OrderResponse | null>(null);
     const [erroDetalhe, setErroDetalhe] = useState<string | null>(null);
+    const [confirmarCancelamento, setConfirmarCancelamento] = useState(false);
+    const [cancelando, setCancelando] = useState(false);
+    const artigo = useRef<HTMLElement>(null);
 
     const IconeTipo = ICONE_TIPO[pedido.tipo];
-    const lista = etapas(pedido.tipo);
+    const lista = etapas(pedido.tipo, pedido.canal === "ONLINE");
     const atual = lista.findIndex((e) => e.status === pedido.status);
     const cancelado = pedido.status === "CANCELLED";
+    const aguardandoPagamento = pedido.status === "AWAITING_PAYMENT" && pedido.canal === "ONLINE";
+    // O cliente cancela até o pedido começar a ser preparado.
+    const podeCancelar = pedido.status === "AWAITING_PAYMENT" || pedido.status === "PENDING";
+    const pagamento = resumoPagamento(pedido);
+    const status = selo(pedido);
+
+    useEffect(() => {
+        if (destacado) {
+            artigo.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, [destacado]);
+
+    const cancelar = async () => {
+        setCancelando(true);
+
+        try {
+            await cancelarMeuPedido(pedido.id, pedido.token);
+            toast.success(
+                pedido.canal === "ONLINE" && pedido.pago
+                    ? `Pedido #${pedido.codigo} cancelado. O estorno do pagamento foi pedido.`
+                    : `Pedido #${pedido.codigo} cancelado.`
+            );
+            setConfirmarCancelamento(false);
+            onMudou();
+        } catch (e) {
+            toast.error(mensagemDeErro(e));
+        } finally {
+            setCancelando(false);
+        }
+    };
 
     const alternar = () => {
         const abrir = !aberto;
@@ -280,7 +379,10 @@ function CartaoPedido({ pedido, ativo }: { pedido: MeuPedido; ativo: boolean }) 
     };
 
     return (
-        <article className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
+        <article
+            ref={artigo}
+            className={`overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ${destacado ? "ring-2 ring-marca" : "ring-black/5"}`}
+        >
             <button type="button" onClick={alternar} aria-expanded={aberto} className="flex w-full flex-col gap-2.5 p-3.5 text-left">
                 <div className="flex items-start justify-between gap-3">
                     <div>
@@ -298,9 +400,26 @@ function CartaoPedido({ pedido, ativo }: { pedido: MeuPedido; ativo: boolean }) 
                     </div>
                 </div>
 
-                <p className={`text-sm font-medium ${cancelado ? "text-tinta-suave" : ativo ? "text-marca" : "text-green-700"}`}>
-                    {frase(pedido)}
-                </p>
+                <div className="flex flex-col gap-1">
+                    <span
+                        className={`flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${status.classe}`}
+                    >
+                        <status.Icone sx={{ fontSize: 18 }} />
+                        {status.label}
+                    </span>
+                    {/* Finalizado: o selo já diz tudo. */}
+                    {ativo && <p className="text-sm text-tinta">{frase(pedido)}</p>}
+                </div>
+                {/* Pagamento em texto, não pílula: o único destaque do card é o selo do status. */}
+                {pagamento &&
+                    (pedido.pago && !cancelado ? (
+                        <p className="-mt-1 flex items-center gap-1 text-xs font-semibold text-green-800">
+                            <CheckCircle sx={{ fontSize: 14 }} />
+                            {pagamento}
+                        </p>
+                    ) : (
+                        <p className="-mt-1 text-xs text-tinta-suave">{pagamento}</p>
+                    ))}
 
                 {/* Barra de etapas: só nos pedidos em andamento. */}
                 {ativo && (
@@ -317,7 +436,11 @@ function CartaoPedido({ pedido, ativo }: { pedido: MeuPedido; ativo: boolean }) 
                                     />
                                     <span
                                         className={`truncate text-[11px] leading-tight sm:text-xs ${
-                                            feita ? "font-semibold text-tinta" : "text-tinta-suave/70"
+                                            i === atual
+                                                ? "font-bold text-marca-escura"
+                                                : feita
+                                                  ? "font-semibold text-tinta"
+                                                  : "text-tinta-suave"
                                         }`}
                                         title={etapa.label}
                                     >
@@ -329,22 +452,49 @@ function CartaoPedido({ pedido, ativo }: { pedido: MeuPedido; ativo: boolean }) 
                     </ol>
                 )}
 
-                {!ativo && (
-                    <span
-                        className={`flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                            cancelado ? "bg-chapa text-tinta-suave" : "bg-green-100 text-green-700"
-                        }`}
-                    >
-                        {!cancelado && <CheckCircle sx={{ fontSize: 14 }} />}
-                        {cancelado ? "Cancelado" : "Concluído"}
-                    </span>
-                )}
-
-                <span className="flex items-center justify-center gap-1 text-xs font-medium text-tinta-suave/70">
+                <span className="flex items-center justify-center gap-1 text-xs font-medium text-tinta-suave">
                     {aberto ? "Ocultar itens" : "Ver itens"}
                     <ExpandMore sx={{ fontSize: 18 }} className={`transition-transform ${aberto ? "rotate-180" : ""}`} />
                 </span>
             </button>
+
+            {(aguardandoPagamento || (ativo && podeCancelar)) && (
+                <div className="flex flex-col gap-2 px-3.5 pb-3.5">
+                    {aguardandoPagamento && (
+                        <Link
+                            href={`/pedidos/${pedido.id}/pagamento`}
+                            className="flex items-center justify-center gap-2 rounded-full bg-marca px-5 py-2.5 font-display text-sm font-bold text-white"
+                        >
+                            <PaymentsOutlined sx={{ fontSize: 18 }} />
+                            Pagar agora
+                        </Link>
+                    )}
+                    {ativo && podeCancelar && (
+                        <button
+                            type="button"
+                            onClick={() => setConfirmarCancelamento(true)}
+                            className="self-start text-xs font-semibold text-tinta-suave underline-offset-2 hover:underline"
+                        >
+                            Cancelar pedido
+                        </button>
+                    )}
+                </div>
+            )}
+
+            <ConfirmDialog
+                open={confirmarCancelamento}
+                title={`Cancelar o pedido #${pedido.codigo}?`}
+                confirmText="Cancelar pedido"
+                cancelText="Voltar"
+                danger
+                loading={cancelando}
+                onConfirm={cancelar}
+                onCancel={() => setConfirmarCancelamento(false)}
+            >
+                {pedido.canal === "ONLINE" && pedido.pago
+                    ? "O valor pago volta pelo mesmo meio de pagamento."
+                    : "O pedido não será preparado."}
+            </ConfirmDialog>
 
             <Collapse in={aberto} unmountOnExit>
                 <div className="border-t border-black/5 px-3.5 py-3">

@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { CircularProgress, Drawer, TextField, useMediaQuery } from "@mui/material";
 import { Close } from "@mui/icons-material";
-import type { OrderResponse } from "@joao.sumi/nippon-ten";
+import type { Address, OrderResponse } from "@joao.sumi/nippon-ten";
 
 import { useToast } from "@/src/components/feedback/ToastProvider";
 import { formatCurrency } from "@/src/lib/format";
 import { mensagemDeErro } from "@/src/lib/http";
+import { formatarKm, localidade } from "@/src/services/entrega";
 import {
     NOME_PAGAMENTO,
     NOME_STATUS,
@@ -17,7 +18,9 @@ import {
     cancelarPedido,
     marcarComoPago,
     minutosDesde,
+    nomeDoCliente,
     proximaEtapa,
+    telefoneDoCliente,
     type StatusPedido,
 } from "@/src/services/pedidos";
 
@@ -33,6 +36,19 @@ const COR_STATUS: Record<StatusPedido, string> = {
     COMPLETED: "bg-green-100 text-green-700",
     CANCELLED: "bg-black/10 text-tinta-suave",
 };
+
+/** "Rua A, 10, Apto 2 · Centro, São Carlos/SP, CEP 13560000" */
+function enderecoPorExtenso(endereco: Address): string {
+    const rua = [endereco.streetAddress, endereco.number, endereco.complement].filter(Boolean).join(", ");
+    const lugar = [
+        localidade({ bairro: endereco.neighborhood, cidade: endereco.city, uf: endereco.state }),
+        endereco.cep ? `CEP ${endereco.cep}` : "",
+    ]
+        .filter(Boolean)
+        .join(", ");
+
+    return [rua, lugar].filter(Boolean).join(" · ");
+}
 
 export function SeloStatus({ status }: { status: StatusPedido }) {
     return (
@@ -137,6 +153,8 @@ function Conteudo({
     };
 
     const status = pedido?.status ?? "PENDING";
+    const online = pedido?.paymentChannel === "ONLINE";
+    const telefone = pedido ? telefoneDoCliente(pedido) : null;
     const tipo = pedido?.fulfillmentType ?? "PICKUP";
     const proxima = pedido ? proximaEtapa(status, tipo) : null;
     const ativo = status !== "COMPLETED" && status !== "CANCELLED";
@@ -185,13 +203,15 @@ function Conteudo({
                 {pedido && (
                     <div className="flex flex-col gap-6">
                         <Bloco titulo="Cliente">
-                            <p className="font-medium">
-                                {pedido.guestName || (pedido.clientId ? `Cliente #${pedido.clientId}` : "Cliente")}
-                            </p>
-                            {pedido.guestPhone && (
-                                <a href={`tel:${pedido.guestPhone}`} className="text-sm text-marca">
-                                    {pedido.guestPhone}
+                            <p className="font-medium">{nomeDoCliente(pedido)}</p>
+                            {telefone ? (
+                                <a href={`tel:${telefone.replace(/[^\d+]/g, "")}`} className="text-sm text-marca">
+                                    {telefone}
                                 </a>
+                            ) : (
+                                pedido.clientId && (
+                                    <p className="text-sm text-tinta-suave">Sem telefone na conta do cliente.</p>
+                                )
                             )}
                         </Bloco>
 
@@ -201,12 +221,11 @@ function Conteudo({
                                 {NOME_TIPO[tipo]}
                             </p>
                             {pedido.address && (
+                                <p className="text-sm text-tinta-suave">{enderecoPorExtenso(pedido.address)}</p>
+                            )}
+                            {pedido.deliveryDistanceKm != null && (
                                 <p className="text-sm text-tinta-suave">
-                                    {[pedido.address.streetAddress, pedido.address.number]
-                                        .filter(Boolean)
-                                        .join(", ")}
-                                    {pedido.address.complement && `, ${pedido.address.complement}`}
-                                    {pedido.address.cep && `, CEP ${pedido.address.cep}`}
+                                    A {formatarKm(pedido.deliveryDistanceKm)} da loja (linha reta)
                                 </p>
                             )}
                         </Bloco>
@@ -280,15 +299,21 @@ function Conteudo({
                             <div className="mt-2 flex flex-wrap items-center gap-2">
                                 <span className="text-sm">
                                     {pedido.paymentMethod ? NOME_PAGAMENTO[pedido.paymentMethod] : "—"}
+                                    {online && " online"}
                                 </span>
                                 <span
                                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                                         pedido.paid ? "bg-green-100 text-green-700" : "bg-amber-50 text-amber-800"
                                     }`}
                                 >
-                                    {pedido.paid ? `Pago ${pedido.paidAt ? hora(pedido.paidAt) : ""}` : "A receber"}
+                                    {pedido.paid
+                                        ? `Pago ${pedido.paidAt ? hora(pedido.paidAt) : ""}`
+                                        : online
+                                          ? "Aguardando o cliente pagar"
+                                          : "A receber"}
                                 </span>
-                                {!somenteLeitura && !pedido.paid && status !== "CANCELLED" && (
+                                {/* Pago online, só o Mercado Pago confirma: o backend recusa marcar à mão. */}
+                                {!somenteLeitura && !online && !pedido.paid && status !== "CANCELLED" && (
                                     <button
                                         type="button"
                                         disabled={ocupado}

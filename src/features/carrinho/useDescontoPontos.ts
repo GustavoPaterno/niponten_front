@@ -6,7 +6,7 @@ import type { Me } from "@/src/lib/auth";
 import { usePontosDoCarrinho, type ItemCarrinho } from "@/src/lib/carrinho";
 import { mensagemDeErro } from "@/src/lib/http";
 import { maximoDePontos } from "@/src/lib/limitePontos";
-import { cotarPedido, type CotacaoPedido } from "@/src/services/cotacao";
+import { cotarPedido, type CotacaoPedido, type EntregaCotacao } from "@/src/services/cotacao";
 import { buscarConfiguracaoPontos, buscarSaldo } from "@/src/services/pontos";
 
 // Espera depois da última mudança antes de recotar (ex.: vários cliques no +).
@@ -20,10 +20,12 @@ export type SituacaoPontos =
     | { tipo: "erro"; mensagem: string }
     | { tipo: "pronto"; saldo: number; valorDoPonto: number; maximo: number };
 
-// `para`/`pontos`/`versao` dizem para qual escolha o resultado vale: se mudou, está velho.
+// `para`/`pontos`/`entrega`/`versao` dizem para qual escolha o resultado vale: se mudou, está velho.
 interface CotacaoGuardada {
     para: ItemCarrinho[];
     pontos: number;
+    /** Chave da entrega cotada (ver `chaveEntrega`). */
+    entrega: string;
     versao: number;
     cotacao: CotacaoPedido | null;
     erro: string | null;
@@ -35,8 +37,16 @@ interface CotacaoGuardada {
  * Quem calcula desconto, total e pontos a ganhar é o backend (/orders/quote).
  *
  * @param ativo `false` suspende as cotações (ex.: carrinho com item recusado).
+ * @param entrega No checkout: tipo e endereço, para a cotação trazer a taxa de entrega.
  */
-export function useDescontoPontos(itens: ItemCarrinho[], me: Me | null, ativo: boolean) {
+export function useDescontoPontos(
+    itens: ItemCarrinho[],
+    me: Me | null,
+    ativo: boolean,
+    entrega: EntregaCotacao | null = null
+) {
+    // Texto em vez do objeto: o checkout recria o objeto a cada render.
+    const chaveEntrega = JSON.stringify(entrega);
     const cliente = me?.type === "CLIENT";
     const userId = me?.userId;
     const escolhidos = usePontosDoCarrinho();
@@ -87,9 +97,9 @@ export function useDescontoPontos(itens: ItemCarrinho[], me: Me | null, ativo: b
         }
 
         let cancelado = false;
-        const marca = { para: itens, pontos: 0, versao };
+        const marca = { para: itens, pontos: 0, entrega: chaveEntrega, versao };
         const timer = setTimeout(() => {
-            cotarPedido(itens, 0)
+            cotarPedido(itens, 0, JSON.parse(chaveEntrega) as EntregaCotacao | null)
                 .then((cotacao) => {
                     if (!cancelado) {
                         setBase({ ...marca, cotacao, erro: null });
@@ -106,9 +116,12 @@ export function useDescontoPontos(itens: ItemCarrinho[], me: Me | null, ativo: b
             cancelado = true;
             clearTimeout(timer);
         };
-    }, [ativo, itens, versao]);
+    }, [ativo, itens, chaveEntrega, versao]);
 
-    const baseAtual = ativo && base && base.para === itens && base.versao === versao ? base : null;
+    const baseAtual =
+        ativo && base && base.para === itens && base.entrega === chaveEntrega && base.versao === versao
+            ? base
+            : null;
     const carteiraAtual = carteira?.versao === versao ? carteira : null;
 
     const maximo =
@@ -128,9 +141,9 @@ export function useDescontoPontos(itens: ItemCarrinho[], me: Me | null, ativo: b
         }
 
         let cancelado = false;
-        const marca = { para: itens, pontos, versao };
+        const marca = { para: itens, pontos, entrega: chaveEntrega, versao };
         const timer = setTimeout(() => {
-            cotarPedido(itens, pontos)
+            cotarPedido(itens, pontos, JSON.parse(chaveEntrega) as EntregaCotacao | null)
                 .then((cotacao) => {
                     if (!cancelado) {
                         setComDesconto({ ...marca, cotacao, erro: null });
@@ -147,12 +160,13 @@ export function useDescontoPontos(itens: ItemCarrinho[], me: Me | null, ativo: b
             cancelado = true;
             clearTimeout(timer);
         };
-    }, [ativo, itens, pontos, versao]);
+    }, [ativo, itens, pontos, chaveEntrega, versao]);
 
     const descontoAtual =
         comDesconto &&
         comDesconto.para === itens &&
         comDesconto.pontos === pontos &&
+        comDesconto.entrega === chaveEntrega &&
         comDesconto.versao === versao
             ? comDesconto
             : null;

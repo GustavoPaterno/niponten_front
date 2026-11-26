@@ -2,6 +2,8 @@ import type {
     FulfillmentType,
     OrderResponse,
     OrderSummaryResponse,
+    PaymentChannel,
+    PaymentMethod,
     Status3,
 } from "@joao.sumi/nippon-ten";
 
@@ -10,6 +12,8 @@ import type { Me } from "@/src/lib/auth";
 import { paraPedido, type ItemCarrinho } from "@/src/lib/carrinho";
 import { unwrap, unwrapTodas } from "@/src/lib/http";
 import { guardarPedidoLocal, lerPedidosLocais } from "@/src/lib/pedidosLocais";
+import type { EntregaCotacao } from "@/src/services/cotacao";
+import { localidade } from "@/src/services/entrega";
 import { opcaoDePagamento, type FormaEscolhida, type PedidoAPagar } from "@/src/services/pagamento";
 
 /** Finalização do pedido pelo cliente e a lista "Meus pedidos". */
@@ -28,6 +32,13 @@ export interface EnderecoInput {
     numero: string;
     complemento: string;
     referencia: string;
+    /**
+     * Vêm da consulta do CEP, só para mostrar: o backend completa bairro, cidade e UF pelo CEP
+     * e não os aceita no corpo.
+     */
+    bairro: string;
+    cidade: string;
+    uf: string;
 }
 
 export interface EnderecoSalvo {
@@ -49,6 +60,45 @@ function complementoComReferencia(e: EnderecoInput): string | undefined {
     return partes.length ? partes.join(", ") : undefined;
 }
 
+/** CEP com 8 dígitos, rua e número: dá para localizar e calcular a taxa. */
+export function enderecoCompleto(e: EnderecoInput): boolean {
+    return e.cep.replace(/\D/g, "").length === 8 && e.rua.trim() !== "" && e.numero.trim() !== "";
+}
+
+/**
+ * Entrega para a cotação. O endereço digitado só entra quando completo; o complemento não muda a
+ * localização e fica de fora, para não recotar (e geolocalizar de novo) a cada letra.
+ */
+export function entregaParaCotacao(
+    tipo: TipoEntregaCliente | null,
+    opcoes: { enderecoId: number | null; endereco: EnderecoInput | null }
+): EntregaCotacao | null {
+    if (!tipo) {
+        return null;
+    }
+
+    if (tipo !== "DELIVERY") {
+        return { tipo };
+    }
+
+    if (opcoes.enderecoId) {
+        return { tipo, addressId: opcoes.enderecoId };
+    }
+
+    if (opcoes.endereco && enderecoCompleto(opcoes.endereco)) {
+        return {
+            tipo,
+            address: {
+                cep: opcoes.endereco.cep.replace(/\D/g, ""),
+                streetAddress: opcoes.endereco.rua.trim(),
+                number: opcoes.endereco.numero.trim(),
+            },
+        };
+    }
+
+    return { tipo };
+}
+
 function paraEnderecoRequest(e: EnderecoInput) {
     return {
         cep: e.cep.replace(/\D/g, ""),
@@ -64,7 +114,13 @@ export async function listarEnderecos(userId: number): Promise<EnderecoSalvo[]> 
     return (lista ?? []).map((e) => ({
         id: e.id as number,
         resumo: [e.streetAddress, e.number].filter(Boolean).join(", "),
-        detalhe: [e.complement, e.cep ? `CEP ${e.cep}` : ""].filter(Boolean).join(", "),
+        detalhe: [
+            e.complement,
+            localidade({ bairro: e.neighborhood, cidade: e.city, uf: e.state }),
+            e.cep ? `CEP ${e.cep}` : "",
+        ]
+            .filter(Boolean)
+            .join(", "),
     }));
 }
 
@@ -147,7 +203,13 @@ export async function criarPedido(
         });
     }
 
-    return { id, codigo, total: pedido.total ?? 0, token: criado.trackingToken ?? null };
+    return {
+        id,
+        codigo,
+        total: pedido.total ?? 0,
+        token: criado.trackingToken ?? null,
+        canal: pedido.paymentChannel ?? pagamento.canal,
+    };
 }
 
 /* ---------- Meus pedidos ---------- */
@@ -162,6 +224,12 @@ export interface MeuPedido {
     criadoEm: string;
     /** Código de acompanhamento (pedido de visitante), para abrir os detalhes. */
     token: string | null;
+    metodo: PaymentMethod | null;
+    /** ONLINE: pago pelo site, com Pix ou cartão; IN_PERSON: na entrega ou no balcão. */
+    canal: PaymentChannel;
+    pago: boolean;
+    /** E-mail do visitante, informado no checkout. Cliente logado: `null` (fica na sessão). */
+    email: string | null;
 }
 
 export const STATUS_ATIVOS: Status3[] = [
@@ -182,10 +250,14 @@ function deResumo(p: OrderSummaryResponse): MeuPedido {
         quantidadeItens: p.itemCount ?? 0,
         criadoEm: p.createdAt ?? "",
         token: null,
+        metodo: p.paymentMethod ?? null,
+        canal: p.paymentChannel ?? "IN_PERSON",
+        pago: p.paid ?? false,
+        email: null,
     };
 }
 
-function deDetalhe(p: OrderResponse, token: string): MeuPedido {
+function deDetalhe(p: OrderResponse, token: string | null): MeuPedido {
     return {
         id: p.id as number,
         codigo: p.code ?? String(p.id),
@@ -195,6 +267,10 @@ function deDetalhe(p: OrderResponse, token: string): MeuPedido {
         quantidadeItens: (p.items ?? []).reduce((t, i) => t + (i.quantity ?? 0), 0),
         criadoEm: p.createdAt ?? "",
         token,
+        metodo: p.paymentMethod ?? null,
+        canal: p.paymentChannel ?? "IN_PERSON",
+        pago: p.paid ?? false,
+        email: p.guestEmail ?? null,
     };
 }
 
@@ -227,4 +303,28 @@ export async function listarMeusPedidos(me: Me | null): Promise<MeuPedido[]> {
 
 export async function buscarMeuPedido(id: number, token: string | null): Promise<OrderResponse> {
     return unwrap(api.order.ordersIdGet(id, token ?? undefined));
+}
+
+export interface PedidoComDetalhe {
+    pedido: MeuPedido;
+    detalhe: OrderResponse;
+}
+
+/**
+ * Um pedido pelo id, para a tela de pagamento. Visitante: usa o código de acompanhamento guardado
+ * neste navegador; logado: o login. Sem acesso, o backend responde 401/403/404.
+ */
+export async function carregarMeuPedido(id: number): Promise<PedidoComDetalhe> {
+    const token = lerPedidosLocais().find((l) => l.id === id)?.token ?? null;
+    const detalhe = await buscarMeuPedido(id, token);
+
+    return { pedido: deDetalhe(detalhe, token), detalhe };
+}
+
+/**
+ * O cliente (ou o visitante, pelo código de acompanhamento) cancela o próprio pedido enquanto ele
+ * espera o pagamento ou ainda não começou a ser preparado. Pago online, o backend estorna.
+ */
+export async function cancelarMeuPedido(id: number, token: string | null): Promise<void> {
+    await unwrap(api.order.ordersIdCancelPost(id, { reason: "Cancelado pelo cliente" }, token ?? undefined));
 }

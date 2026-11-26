@@ -9,7 +9,9 @@ import {
     StorefrontOutlined,
 } from "@mui/icons-material";
 
+import { formatCurrency } from "@/src/lib/format";
 import { linkDeAcesso } from "@/src/lib/navegacao";
+import { formatarKm, localidade, type ConfiguracaoEntrega } from "@/src/services/entrega";
 import {
     TIPOS_ENTREGA,
     type EnderecoInput,
@@ -18,6 +20,7 @@ import {
 } from "@/src/services/checkout";
 
 import Secao, { OpcaoCartao } from "./Secao";
+import { mascararTelefone } from "@/src/lib/format";
 
 const ICONES = {
     DELIVERY: DeliveryDiningOutlined,
@@ -27,16 +30,6 @@ const ICONES = {
 
 // Cantos arredondados nos campos.
 const campo = { "& .MuiOutlinedInput-root": { borderRadius: "12px" } };
-
-/** (11) 91234-5678 */
-function mascararTelefone(valor: string): string {
-    const d = valor.replace(/\D/g, "").slice(0, 11);
-
-    if (d.length <= 2) return d.length ? `(${d}` : "";
-    if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-    if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-}
 
 /** 12345-678 */
 function mascararCep(valor: string): string {
@@ -48,10 +41,13 @@ export function TipoEntregaSecao({
     tipo,
     onChange,
     erro,
+    raioKm,
 }: {
     tipo: TipoEntregaCliente | null;
     onChange: (tipo: TipoEntregaCliente) => void;
     erro: boolean;
+    /** Raio de entrega, quando a taxa por distância está ligada. */
+    raioKm: number | null;
 }) {
     return (
         <Secao titulo="Como você quer receber?">
@@ -66,7 +62,9 @@ export function TipoEntregaSecao({
                             onClick={() => onChange(t.valor)}
                             icone={<Icone />}
                             titulo={t.label}
-                            descricao={t.descricao}
+                            descricao={
+                                t.valor === "DELIVERY" && raioKm ? `Até ${formatarKm(raioKm)} da loja` : t.descricao
+                            }
                         />
                     );
                 })}
@@ -143,6 +141,41 @@ export function ContatoSecao({
     );
 }
 
+/** Situação da consulta do CEP digitado. */
+export type ConsultaCep =
+    | { cep: string; estado: "carregando" }
+    | { cep: string; estado: "nao-encontrado" }
+    | { cep: string; estado: "erro"; mensagem: string }
+    /** `semRua`: CEP geral da cidade, sem rua: o cliente digita. */
+    | { cep: string; estado: "ok"; semRua: boolean };
+
+function ajudaDoCep(consulta: ConsultaCep | null, erro: boolean | undefined): string | undefined {
+    if (consulta?.estado === "nao-encontrado") {
+        return "CEP não encontrado. Confira o número.";
+    }
+
+    if (erro) {
+        return "CEP com 8 dígitos.";
+    }
+
+    if (consulta?.estado === "carregando") {
+        return "Buscando endereço...";
+    }
+
+    if (consulta?.estado === "erro") {
+        return "Não deu para buscar o endereço agora. Preencha a rua.";
+    }
+
+    return undefined;
+}
+
+/** "Até 3 km: R$ 5,00 · até 6 km: R$ 8,00" */
+function resumoDasFaixas(configuracao: ConfiguracaoEntrega): string {
+    return configuracao.faixas
+        .map((f, i) => `${i === 0 ? "Até" : "até"} ${formatarKm(f.ateKm)}: ${f.taxa === 0 ? "grátis" : formatCurrency(f.taxa)}`)
+        .join(" · ");
+}
+
 export function EnderecoSecao({
     cliente,
     salvos,
@@ -150,6 +183,9 @@ export function EnderecoSecao({
     onEscolher,
     endereco,
     onEndereco,
+    onConfirmarEndereco,
+    consultaCep,
+    configEntrega,
     erros,
     digitando,
 }: {
@@ -160,6 +196,12 @@ export function EnderecoSecao({
     onEscolher: (escolha: number | "novo") => void;
     endereco: EnderecoInput;
     onEndereco: (endereco: EnderecoInput) => void;
+    /** Saiu de um campo do endereço: a taxa pode ser recalculada. */
+    onConfirmarEndereco: () => void;
+    /** Consulta do CEP que está no campo (`null` = nenhuma). */
+    consultaCep: ConsultaCep | null;
+    /** Faixas de entrega, para mostrar. `null` = não carregou. */
+    configEntrega: ConfiguracaoEntrega | null;
     erros: Partial<Record<"cep" | "rua" | "numero" | "enderecoSalvo", boolean>>;
     /** Mostra os campos de um endereço novo. */
     digitando: boolean;
@@ -169,6 +211,12 @@ export function EnderecoSecao({
 
     return (
         <Secao titulo="Endereço de entrega">
+            {configEntrega?.ativa && configEntrega.faixas.length > 0 && (
+                <p className="-mt-1 text-sm text-tinta-suave">
+                    Taxa pela distância da loja. {resumoDasFaixas(configEntrega)}.
+                </p>
+            )}
+
             {cliente && salvos === null && (
                 <div className="flex justify-center py-4">
                     <CircularProgress size={24} aria-label="Carregando endereços" />
@@ -208,8 +256,9 @@ export function EnderecoSecao({
                         autoComplete="postal-code"
                         required
                         placeholder="12345-678"
-                        error={erros.cep}
-                        helperText={erros.cep ? "CEP com 8 dígitos." : undefined}
+                        onBlur={onConfirmarEndereco}
+                        error={erros.cep || consultaCep?.estado === "nao-encontrado"}
+                        helperText={ajudaDoCep(consultaCep, erros.cep)}
                         slotProps={{ htmlInput: { inputMode: "numeric" } }}
                         className="col-span-6 sm:col-span-2"
                         sx={campo}
@@ -218,10 +267,17 @@ export function EnderecoSecao({
                         label="Rua"
                         value={endereco.rua}
                         onChange={(e) => mudar("rua", e.target.value)}
+                        onBlur={onConfirmarEndereco}
                         autoComplete="address-line1"
                         required
                         error={erros.rua}
-                        helperText={erros.rua ? "Informe a rua." : undefined}
+                        helperText={
+                            erros.rua
+                                ? "Informe a rua."
+                                : consultaCep?.estado === "ok" && consultaCep.semRua
+                                  ? "Este CEP é da cidade toda: informe a rua."
+                                  : undefined
+                        }
                         className="col-span-6 sm:col-span-4"
                         sx={campo}
                     />
@@ -229,6 +285,7 @@ export function EnderecoSecao({
                         label="Número"
                         value={endereco.numero}
                         onChange={(e) => mudar("numero", e.target.value)}
+                        onBlur={onConfirmarEndereco}
                         required
                         error={erros.numero}
                         helperText={erros.numero ? "Informe o número." : undefined}
@@ -252,6 +309,12 @@ export function EnderecoSecao({
                         className="col-span-6"
                         sx={campo}
                     />
+                    {endereco.cidade && (
+                        <p className="col-span-6 -mt-1 flex items-center gap-1.5 text-sm text-tinta-suave">
+                            <PlaceOutlined sx={{ fontSize: 18 }} />
+                            {localidade(endereco)}
+                        </p>
+                    )}
                 </div>
             )}
         </Secao>
@@ -288,5 +351,38 @@ function OpcaoEndereco({
             </span>
             {marcado && <CheckCircle fontSize="small" className="text-marca" />}
         </button>
+    );
+}
+
+/** Cliente logado de uma conta antiga, sem telefone: pede uma vez e guarda na conta. */
+export function TelefoneContaSecao({
+    telefone,
+    onChange,
+    erro,
+}: {
+    telefone: string;
+    onChange: (telefone: string) => void;
+    erro: boolean;
+}) {
+    return (
+        <Secao titulo="Seu telefone">
+            <TextField
+                label="Telefone (WhatsApp)"
+                value={telefone}
+                onChange={(e) => onChange(mascararTelefone(e.target.value))}
+                autoComplete="tel"
+                fullWidth
+                required
+                placeholder="(11) 91234-5678"
+                error={erro}
+                helperText={
+                    erro
+                        ? "Informe o telefone com DDD."
+                        : "Para a equipe falar com você sobre o pedido. Fica salvo na sua conta."
+                }
+                slotProps={{ htmlInput: { inputMode: "tel" } }}
+                sx={campo}
+            />
+        </Secao>
     );
 }

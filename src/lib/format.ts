@@ -45,3 +45,18 @@ export function fromDatetimeInput(value: string): string | undefined {
 export function parsePreco(value: string): number {
     return Number(value.replace(",", "."));
 }
+
+/** (11) 91234-5678, enquanto o usuário digita. */
+export function mascararTelefone(valor: string): string {
+    const d = valor.replace(/\D/g, "").slice(0, 11);
+
+    if (d.length <= 2) return d.length ? `(${d}` : "";
+    if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+
+/** Telefone com DDD: 10 dígitos (fixo) ou 11 (celular). */
+export function telefoneValido(valor: string): boolean {
+    return valor.replace(/\D/g, "").length >= 10;
+}

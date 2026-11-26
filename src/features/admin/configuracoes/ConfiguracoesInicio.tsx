@@ -5,6 +5,7 @@ import {
     BadgeOutlined,
     Inventory2Outlined,
     LocalOfferOutlined,
+    LocalShippingOutlined,
     PeopleOutlined,
     SetMealOutlined,
     StarsOutlined,
@@ -22,6 +23,7 @@ const DETALHES: Record<string, { texto: string; Icone: SvgIconComponent }> = {
     "/admin/configuracoes/ingredientes": { texto: "Recheios e adicionais", Icone: Inventory2Outlined },
     "/admin/configuracoes/combos": { texto: "Combos e preços promocionais", Icone: LocalOfferOutlined },
     "/admin/configuracoes/pontos": { texto: "Programa de pontos e saldo dos clientes", Icone: StarsOutlined },
+    "/admin/configuracoes/entrega": { texto: "Endereço da loja e taxa por distância", Icone: LocalShippingOutlined },
     "/admin/configuracoes/usuarios": { texto: "Contas da equipe", Icone: PeopleOutlined },
     "/admin/configuracoes/permissoes": { texto: "O que cada cargo pode fazer", Icone: BadgeOutlined },
 };

@@ -12,16 +12,18 @@
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@joao.sumi/nippon-ten": "0.6.0-alpha-SNAPSHOT.202611261129",
+    "@mercadopago/sdk-react": "1.0.7",
     "@mui/icons-material": "^9.4.0",
     "@mui/material": "^9.3.1",
     "@mui/material-nextjs": "^9.4.0",
-    "@vercel/blob": "^2.8.0",
+    "@vercel/blob": "^2.4.0",
+    "@vis.gl/react-google-maps": "^1.10.2",
     "next": "^16.3.5",
-    "@joao.sumi/nippon-ten": "0.2.0-alpha-SNAPSHOT.202611252211",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
-  "devDependencies": {  
+  "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

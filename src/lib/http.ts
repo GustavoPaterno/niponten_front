@@ -84,7 +84,43 @@ const TRADUCOES: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
         /^Product \d+ already has size \d+/,
         () => "Este tamanho já foi adicionado ao produto.",
     ],
+    [
+        /^cep (\S+) was not found/,
+        (m) => `O CEP ${m[1]} não foi encontrado. Confira o número.`,
+    ],
+    [
+        /must be a CEP like/,
+        () => "CEP inválido: use 8 dígitos, como 01310-100.",
+    ],
+    [
+        /^The address could not be located for delivery/,
+        () => "Não encontramos este endereço para a entrega. Confira a rua, o número e o CEP.",
+    ],
+    [
+        /^The store address could not be located/,
+        () =>
+            "Não encontramos o endereço da loja no mapa. Confira a rua, o número e o CEP, ou ajuste o pino no mapa.",
+    ],
+    [
+        /^The delivery fee could not be calculated now/,
+        () =>
+            "Não foi possível calcular a taxa de entrega agora. Tente de novo em instantes ou escolha a retirada.",
+    ],
+    [
+        /^The address is ([\d.]+) km away and the delivery reaches ([\d.]+) km/,
+        (m) =>
+            `Este endereço fica a ${km(m[1])} da loja e a entrega vai até ${km(m[2])}. Escolha outro endereço ou a retirada.`,
+    ],
+    [
+        /^Two tiers share maxDistanceKm ([\d.]+)/,
+        (m) => `Há duas faixas com a mesma distância (${km(m[1])}).`,
+    ],
 ];
+
+/** "22.25" -> "22,25 km" */
+function km(valor: string): string {
+    return `${Number(valor).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} km`;
+}
 
 const CAMPOS: Record<string, string> = {
     name: "Nome",
@@ -94,6 +130,14 @@ const CAMPOS: Record<string, string> = {
     password: "Senha",
     price: "Preço",
     permissions: "Permissões",
+    cep: "CEP",
+    streetAddress: "Rua",
+    number: "Número",
+    latitude: "Latitude do pino",
+    longitude: "Longitude do pino",
+    tiers: "Faixas",
+    maxDistanceKm: "Distância",
+    fee: "Taxa",
 };
 
 function nomeDoCampo(field: string | undefined): string | null {
@@ -162,6 +206,14 @@ export function criarApiError(status: number, error: unknown): ApiError {
 
     if (status === 400 && mensagem) {
         return new ApiError(400, traduzir(mensagem));
+    }
+
+    // 502 com corpo: o backend respondeu, mas o serviço de CEP ou de mapa dele está fora do ar.
+    if (status === 502 && mensagem?.startsWith("Address lookup unavailable")) {
+        return new ApiError(
+            502,
+            "A consulta de endereço está indisponível agora. Tente novamente em instantes."
+        );
     }
 
     // 502: o proxy /backend não alcançou o backend (fora do ar).

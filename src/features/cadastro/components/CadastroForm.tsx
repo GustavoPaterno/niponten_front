@@ -9,10 +9,12 @@ import { entrar } from "@/src/lib/auth";
 import { linkDeAcesso } from "@/src/lib/navegacao";
 import { cadastrarCliente } from "@/src/services/usuarios";
 import { mensagemDeErro } from "@/src/lib/http";
+import { mascararTelefone, telefoneValido } from "@/src/lib/format";
 
 const VAZIO = {
     name: "",
     lastName: "",
+    phone: "",
     email: "",
     password: "",
 };
@@ -43,6 +45,7 @@ export default function CadastroForm({ voltar }: { voltar: string | null }) {
             await cadastrarCliente({
                 name: form.name,
                 lastName: form.lastName,
+                phone: form.phone,
                 email: form.email,
                 password: form.password,
             });
@@ -61,6 +64,7 @@ export default function CadastroForm({ voltar }: { voltar: string | null }) {
     const incompleto =
         !form.name.trim() ||
         !form.lastName.trim() ||
+        !telefoneValido(form.phone) ||
         !form.email.trim() ||
         !form.password;
 
@@ -76,6 +80,17 @@ export default function CadastroForm({ voltar }: { voltar: string | null }) {
                 <Field label="Nome" autoComplete="given-name" required {...campo("name")} />
                 <Field label="Sobrenome" autoComplete="family-name" required {...campo("lastName")} />
             </div>
+
+            <Field
+                label="Telefone (WhatsApp)"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="(11) 91234-5678"
+                required
+                {...campo("phone")}
+                onChange={(e) => setForm((atual) => ({ ...atual, phone: mascararTelefone(e.target.value) }))}
+            />
 
             <Field
                 label="E-mail"
