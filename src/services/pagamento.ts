@@ -13,10 +13,8 @@ import { unwrap } from "@/src/lib/http";
  *   pedido. O backend expira o pedido sem pagamento depois de 30 minutos.
  *
  * O cartão online usa o Card Payment Brick do Mercado Pago, que precisa da public key em
- * NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY. Sem ela, a opção não aparece.
+ * MERCADOPAGO_PUBLIC_KEY (chega ao navegador por `useConfigPublica`). Sem ela, a opção não aparece.
  */
-
-export const PUBLIC_KEY_MERCADO_PAGO = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY ?? "";
 
 export type FormaEscolhida = "PIX_ONLINE" | "CARTAO_ONLINE" | "DINHEIRO" | "DEBITO" | "CREDITO" | "PIX";
 
@@ -82,7 +80,9 @@ const PRESENCIAL: OpcaoPagamento[] = [
 ];
 
 /** Pagar agora: o cartão só aparece com a public key do Mercado Pago configurada. */
-export const OPCOES_ONLINE = ONLINE.filter((o) => o.metodo !== "CARD" || PUBLIC_KEY_MERCADO_PAGO !== "");
+export function opcoesOnline(publicKeyMercadoPago: string): OpcaoPagamento[] {
+    return ONLINE.filter((o) => o.metodo !== "CARD" || publicKeyMercadoPago !== "");
+}
 
 /** Pagar na entrega, na retirada ou no balcão. */
 export const OPCOES_PRESENCIAIS = PRESENCIAL;

@@ -1,8 +1,9 @@
 import { CreditCardOutlined, PaymentsOutlined, PixOutlined } from "@mui/icons-material";
 
+import { useConfigPublica } from "@/src/components/config/ConfigPublicaProvider";
 import {
-    OPCOES_ONLINE,
     OPCOES_PRESENCIAIS,
+    opcoesOnline,
     type FormaEscolhida,
     type OpcaoPagamento,
 } from "@/src/services/pagamento";
@@ -64,11 +65,14 @@ export default function PagamentoSecao({
     /** `false` para o funcionário lançando pelo balcão: o backend só aceita presencial. */
     online: boolean;
 }) {
+    const { mercadoPagoPublicKey } = useConfigPublica();
+    const opcoesAgora = opcoesOnline(mercadoPagoPublicKey);
+
     return (
         <Secao titulo="Forma de pagamento">
-            {online && OPCOES_ONLINE.length > 0 && (
+            {online && opcoesAgora.length > 0 && (
                 <>
-                    <Grupo titulo="Pagar agora" opcoes={OPCOES_ONLINE} forma={forma} onChange={onChange} />
+                    <Grupo titulo="Pagar agora" opcoes={opcoesAgora} forma={forma} onChange={onChange} />
                     <p className="-mt-1 text-xs text-tinta-suave">
                         O pedido vai para a cozinha assim que o pagamento for confirmado.
                     </p>

@@ -4,6 +4,8 @@ import "./globals.css";
 import { ToastProvider } from "@/src/components/feedback/ToastProvider";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import TemaProvider from "@/src/theme/TemaProvider";
+import { ConfigPublicaProvider } from "@/src/components/config/ConfigPublicaProvider";
+import { lerConfigPublica } from "@/src/lib/configPublica";
 
 // Títulos, preços e botões: grotesca larga e pesada, com cara de placa de lanchonete.
 const display = Bricolage_Grotesque({
@@ -32,13 +34,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     return (
         <html lang="pt-BR" className={`${display.variable} ${corpo.variable}`}>
             <body className="min-h-full flex flex-col">
-                <AppRouterCacheProvider>
-                    <TemaProvider>
-                        <ToastProvider>
-                            {children}
-                        </ToastProvider>
-                    </TemaProvider>
-                </AppRouterCacheProvider>
+                <ConfigPublicaProvider config={lerConfigPublica()}>
+                    <AppRouterCacheProvider>
+                        <TemaProvider>
+                            <ToastProvider>
+                                {children}
+                            </ToastProvider>
+                        </TemaProvider>
+                    </AppRouterCacheProvider>
+                </ConfigPublicaProvider>
             </body>
         </html>
     );

@@ -6,12 +6,12 @@ import { CheckCircle, ContentCopyOutlined, ErrorOutlined, HourglassTopOutlined }
 import { CardPayment, initMercadoPago } from "@mercadopago/sdk-react";
 
 import { useSessao } from "@/src/components/auth/SessaoProvider";
+import { useConfigPublica } from "@/src/components/config/ConfigPublicaProvider";
 import { useToast } from "@/src/components/feedback/ToastProvider";
 import { formatCurrency } from "@/src/lib/format";
 import { mensagemDeErro } from "@/src/lib/http";
 import type { MeuPedido } from "@/src/services/checkout";
 import {
-    PUBLIC_KEY_MERCADO_PAGO,
     gerarPix,
     listarPagamentos,
     motivoDaRecusa,
@@ -32,9 +32,9 @@ type FalhaCartao = NonNullable<ComponentProps<typeof CardPayment>["onError"]>;
 
 let mercadoPagoIniciado = false;
 
-function iniciarMercadoPago() {
-    if (!mercadoPagoIniciado && PUBLIC_KEY_MERCADO_PAGO) {
-        initMercadoPago(PUBLIC_KEY_MERCADO_PAGO, { locale: "pt-BR" });
+function iniciarMercadoPago(publicKey: string) {
+    if (!mercadoPagoIniciado && publicKey) {
+        initMercadoPago(publicKey, { locale: "pt-BR" });
         mercadoPagoIniciado = true;
     }
 }
@@ -271,6 +271,7 @@ function PagamentoCartao({
 }) {
     const [erro, setErro] = useState<string | null>(null);
     const { me } = useSessao();
+    const { mercadoPagoPublicKey } = useConfigPublica();
     const onPagoAtual = useRef(onPago);
     // O Brick pede o e-mail do pagador; com ele já conhecido, o cliente não digita de novo.
     const email = pedido.email ?? (me?.type === "CLIENT" ? me.email : null);
@@ -327,7 +328,7 @@ function PagamentoCartao({
         );
     }
 
-    if (!PUBLIC_KEY_MERCADO_PAGO) {
+    if (!mercadoPagoPublicKey) {
         return (
             <p className="text-sm text-erro">
                 O pagamento com cartão está indisponível agora. Cancele e faça o pedido com Pix ou pagando na entrega.
@@ -335,7 +336,7 @@ function PagamentoCartao({
         );
     }
 
-    iniciarMercadoPago();
+    iniciarMercadoPago(mercadoPagoPublicKey);
 
     return (
         <div className="flex flex-col gap-2">
