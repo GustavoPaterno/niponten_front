@@ -1,5 +1,6 @@
 import {
     AddressResourceApi,
+    CategoryResourceApi,
     ComboResourceApi,
     DeliveryResourceApi,
     IngredientResourceApi,
@@ -17,6 +18,7 @@ import { configuration } from "@/src/lib/nippon";
 
 export const api = {
     address: new AddressResourceApi(configuration),
+    category: new CategoryResourceApi(configuration),
     combo: new ComboResourceApi(configuration),
     delivery: new DeliveryResourceApi(configuration),
     ingredient: new IngredientResourceApi(configuration),

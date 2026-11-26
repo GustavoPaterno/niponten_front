@@ -49,6 +49,11 @@ export const MODULOS: ModuloNavegacao[] = [
                 permissao: "MANAGE_PRODUCTS",
             },
             {
+                label: "Categorias",
+                href: "/admin/configuracoes/categorias",
+                permissao: "MANAGE_PRODUCTS",
+            },
+            {
                 label: "Ingredientes",
                 href: "/admin/configuracoes/ingredientes",
                 permissao: "MANAGE_INGREDIENTS",
