@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
     BadgeOutlined,
+    CategoryOutlined,
     Inventory2Outlined,
     LocalOfferOutlined,
     LocalShippingOutlined,
@@ -20,6 +21,7 @@ const PREFIXO = "/admin/configuracoes/";
 // O que cada tela de configuração resolve, em palavras de quem toca a loja.
 const DETALHES: Record<string, { texto: string; Icone: SvgIconComponent }> = {
     "/admin/configuracoes/produtos": { texto: "Cardápio, preços e tamanhos", Icone: SetMealOutlined },
+    "/admin/configuracoes/categorias": { texto: "Seções do cardápio: Pastéis, Sucos...", Icone: CategoryOutlined },
     "/admin/configuracoes/ingredientes": { texto: "Recheios e adicionais", Icone: Inventory2Outlined },
     "/admin/configuracoes/combos": { texto: "Combos e preços promocionais", Icone: LocalOfferOutlined },
     "/admin/configuracoes/pontos": { texto: "Programa de pontos e saldo dos clientes", Icone: StarsOutlined },

@@ -34,6 +34,12 @@ const columnDef: DataTableColumn<Produto>[] = [
         headerName: "Produto",
     },
     {
+        field: "categoria",
+        type: "text",
+        headerName: "Categoria",
+        render: (value) => value || "Sem categoria",
+    },
+    {
         field: "description",
         type: "text",
         headerName: "Descrição",

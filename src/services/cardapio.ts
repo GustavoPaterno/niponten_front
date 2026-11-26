@@ -7,6 +7,8 @@ import type {
 import { api } from "@/src/lib/api";
 import { unwrap, unwrapTodas } from "@/src/lib/http";
 
+import { listarCategorias } from "./categorias";
+
 /**
  * Dados do cardápio do cliente (tela /menu). Tudo aqui é público no backend:
  * funciona com ou sem login. Só entra o que dá para pedir agora.
@@ -22,6 +24,8 @@ export interface ItemProduto {
     /** true quando há mais de um tamanho (o preço é "a partir de"). */
     variosPrecos: boolean;
     href: string;
+    /** Seção do cardápio; `null` = sem categoria. */
+    categoriaId: number | null;
 }
 
 export interface ItemPromocao {
@@ -48,10 +52,17 @@ export interface ItemCombo {
     href: string;
 }
 
+export interface CategoriaCardapio {
+    id: number;
+    nome: string;
+}
+
 export interface Cardapio {
     promocoes: ItemPromocao[];
     combos: ItemCombo[];
     produtos: ItemProduto[];
+    /** Categorias na ordem do cardápio. Vazia: a vitrine mostra uma seção só, como antes. */
+    categorias: CategoriaCardapio[];
 }
 
 export function hrefProduto(id: number): string {
@@ -76,6 +87,7 @@ function toProduto(detalhe: ProductDetailResponse): ItemProduto | null {
         precoMinimo: Math.min(...precos),
         variosPrecos: precos.length > 1,
         href: hrefProduto(detalhe.id as number),
+        categoriaId: detalhe.categoryId ?? null,
     };
 }
 
@@ -126,11 +138,13 @@ function toCombo(combo: ComboResponse): ItemCombo {
 }
 
 export async function buscarCardapio(): Promise<Cardapio> {
-    const [produtosBase, combos, promocoes] = await Promise.all([
+    const [produtosBase, combos, promocoes, categorias] = await Promise.all([
         unwrapTodas((page, size) => api.product.productsGet(page, size)),
         // available=true: o backend já devolve só o que vale hoje.
         unwrapTodas((page, size) => api.combo.combosGet(true, page, size)),
         unwrapTodas((page, size) => api.promotion.promotionsGet(true, page, size)),
+        // Sem as categorias (backend antigo ou falha), a vitrine segue numa seção só.
+        listarCategorias().catch(() => []),
     ]);
 
     // A lista de produtos não traz os tamanhos (e os preços): busca o detalhe de cada um.
@@ -152,5 +166,6 @@ export async function buscarCardapio(): Promise<Cardapio> {
             .filter((p): p is ItemPromocao => p !== null),
         combos: combos.filter((c) => c.status === "ACTIVE").map(toCombo),
         produtos: produtos.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
+        categorias: categorias.map((c) => ({ id: c.id, nome: c.name })),
     };
 }

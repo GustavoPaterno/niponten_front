@@ -9,6 +9,7 @@ import { aplicarImagem, SEM_ALTERACAO, type ImagemEscolha } from "@/src/lib/uplo
 
 import type { Ingrediente } from "./ingredientes";
 import { toIngrediente } from "./ingredientes";
+import { listarCategorias, type Categoria } from "./categorias";
 import type { Tamanho } from "./tamanhos";
 
 export type ProdutoStatus = "ACTIVE" | "INACTIVE";
@@ -50,6 +51,10 @@ export interface Produto {
     description: string;
     imageUrl: string | null;
     status: ProdutoStatus;
+    /** Categoria do cardápio; `null` = sem categoria. */
+    categoryId: number | null;
+    /** Nome da categoria, para a tabela. */
+    categoria: string | null;
     ingredientes: ProdutoIngrediente[];
     tamanhos: ProdutoTamanho[];
     adicionais: ProdutoAdicional[];
@@ -75,6 +80,8 @@ export interface ProdutoInput {
     name: string;
     description: string;
     status: ProdutoStatus;
+    /** `null` tira o produto da categoria. */
+    categoryId: number | null;
     ingredientIds: number[];
     sizes: ProdutoTamanhoInput[];
     adicionais: ProdutoAdicionalInput[];
@@ -101,7 +108,8 @@ export function precoMinimo(tamanhos: ProdutoTamanho[]): number | null {
 function montarProduto(
     detalhe: ProductDetailResponse,
     ingredientes: Map<number, Ingrediente>,
-    tamanhos: Map<number, Tamanho>
+    tamanhos: Map<number, Tamanho>,
+    categorias: Map<number, Categoria>
 ): Produto {
     const listaIngredientes: ProdutoIngrediente[] = (
         detalhe.ingredients ?? []
@@ -137,6 +145,8 @@ function montarProduto(
         description: detalhe.description ?? "",
         imageUrl: detalhe.imageUrl ?? null,
         status: detalhe.status ?? "ACTIVE",
+        categoryId: detalhe.categoryId ?? null,
+        categoria: detalhe.categoryId != null ? (categorias.get(detalhe.categoryId)?.name ?? null) : null,
         ingredientes: listaIngredientes,
         tamanhos: listaTamanhos,
         adicionais: listaAdicionais,
@@ -152,11 +162,14 @@ function montarProduto(
  * (em paralelo) e os catálogos de ingredientes e tamanhos para obter os nomes.
  */
 export async function listarProdutos(): Promise<Produto[]> {
-    const [produtos, ingredientes, tamanhos] = await Promise.all([
+    const [produtos, ingredientes, tamanhos, categorias] = await Promise.all([
         unwrapTodas((page, size) => api.product.productsGet(page, size)),
         unwrapTodas((page, size) => api.ingredient.ingredientsGet(page, size)),
         unwrapTodas((page, size) => api.size.sizesGet(page, size)),
+        // Backend sem categorias (antes da migration): a lista segue, só sem a coluna preenchida.
+        listarCategorias().catch(() => []),
     ]);
+    const mapaCategorias = new Map(categorias.map((c) => [c.id, c]));
 
     const mapaIngredientes = new Map<number, Ingrediente>(
         (ingredientes ?? []).map((i) => [i.id as number, toIngrediente(i)])
@@ -174,7 +187,7 @@ export async function listarProdutos(): Promise<Produto[]> {
         )
     );
 
-    return detalhes.map((d) => montarProduto(d, mapaIngredientes, mapaTamanhos));
+    return detalhes.map((d) => montarProduto(d, mapaIngredientes, mapaTamanhos, mapaCategorias));
 }
 
 function paraAdicionalRequest(a: ProdutoAdicionalInput) {
@@ -197,6 +210,7 @@ export async function criarProduto(input: ProdutoInput): Promise<void> {
                         description: input.description.trim() || undefined,
                         imageUrl: imageUrl ?? undefined,
                         status: input.status,
+                        categoryId: input.categoryId ?? undefined,
                     },
                     ingredients: input.ingredientIds.map((ingredientId) => ({
                         ingredientId,
@@ -220,7 +234,7 @@ export async function criarProduto(input: ProdutoInput): Promise<void> {
 /**
  * Edita um produto.
  *
- * O PUT /products/{id} só altera nome, descrição e status. Ingredientes e tamanhos são
+ * O PUT /products/{id} altera nome, descrição, imagem, status e categoria. Ingredientes e tamanhos são
  * sub-recursos, então comparamos o estado atual com o desejado e chamamos as rotas de
  * adicionar / atualizar / remover. Os tamanhos novos entram ANTES dos removidos, porque
  * o backend não permite que o produto fique sem nenhum tamanho.
@@ -242,6 +256,7 @@ export async function atualizarProduto(
                     description: input.description.trim() || undefined,
                     imageUrl: imageUrl ?? undefined,
                     status: input.status,
+                    categoryId: input.categoryId ?? undefined,
                 })
             ),
         (resposta) => resposta.imageUrl
@@ -370,6 +385,8 @@ export async function alterarStatusProduto(
             description: produto.description || undefined,
             imageUrl: produto.imageUrl ?? undefined,
             status,
+            // O PUT troca o produto inteiro: sem a categoria, mudar o status a apagaria.
+            categoryId: produto.categoryId ?? undefined,
         })
     );
 }

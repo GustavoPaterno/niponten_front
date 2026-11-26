@@ -6,7 +6,7 @@ import { Close, Search } from "@mui/icons-material";
 
 import { useSessao } from "@/src/components/auth/SessaoProvider";
 import { mensagemDeErro } from "@/src/lib/http";
-import { buscarCardapio, type Cardapio } from "@/src/services/cardapio";
+import { buscarCardapio, type Cardapio, type ItemProduto } from "@/src/services/cardapio";
 
 import {
     CardCombo,
@@ -33,6 +33,36 @@ function normalizar(texto: string): string {
 
 function combina(busca: string, ...campos: string[]): boolean {
     return campos.some((campo) => normalizar(campo).includes(busca));
+}
+
+interface SecaoProdutos {
+    id: string;
+    titulo: string;
+    produtos: ItemProduto[];
+}
+
+/**
+ * Uma seção por categoria, na ordem do cardápio, e os produtos sem categoria no fim ("Outros").
+ * Sem nenhuma categoria cadastrada, fica a seção única "Cardápio", como antes das categorias.
+ * Categoria sem produto à venda (ou sem resultado na busca) não aparece.
+ */
+function secoesDeProdutos(produtos: ItemProduto[], categorias: Cardapio["categorias"]): SecaoProdutos[] {
+    const conhecidas = new Set(categorias.map((c) => c.id));
+    const porCategoria = categorias.map((c) => ({
+        id: `categoria-${c.id}`,
+        titulo: c.nome,
+        produtos: produtos.filter((p) => p.categoriaId === c.id),
+    }));
+    const semCategoria = produtos.filter((p) => p.categoriaId === null || !conhecidas.has(p.categoriaId));
+
+    return [
+        ...porCategoria,
+        {
+            id: "cardapio",
+            titulo: porCategoria.some((s) => s.produtos.length > 0) ? "Outros" : "Cardápio",
+            produtos: semCategoria,
+        },
+    ].filter((s) => s.produtos.length > 0);
 }
 
 /** Vitrine da loja: é a home do app. Dá para montar o pedido inteiro sem ter conta. */
@@ -69,16 +99,13 @@ export default function MenuBuild() {
             return null;
         }
 
-        const { promocoes, combos, produtos } = estado.cardapio;
-
-        if (!termo) {
-            return estado.cardapio;
-        }
+        const { promocoes, combos, produtos, categorias } = estado.cardapio;
+        const produtosDaBusca = termo ? produtos.filter((i) => combina(termo, i.nome, i.descricao)) : produtos;
 
         return {
-            promocoes: promocoes.filter((i) => combina(termo, i.nome, i.descricao)),
-            combos: combos.filter((i) => combina(termo, i.nome, i.descricao)),
-            produtos: produtos.filter((i) => combina(termo, i.nome, i.descricao)),
+            promocoes: termo ? promocoes.filter((i) => combina(termo, i.nome, i.descricao)) : promocoes,
+            combos: termo ? combos.filter((i) => combina(termo, i.nome, i.descricao)) : combos,
+            secoesProdutos: secoesDeProdutos(produtosDaBusca, categorias),
         };
     }, [estado, termo]);
 
@@ -86,7 +113,7 @@ export default function MenuBuild() {
         ? [
               { id: "promocoes", titulo: "Promoções", total: filtrado.promocoes.length },
               { id: "combos", titulo: "Combos", total: filtrado.combos.length },
-              { id: "cardapio", titulo: "Cardápio", total: filtrado.produtos.length },
+              ...filtrado.secoesProdutos.map((s) => ({ id: s.id, titulo: s.titulo, total: s.produtos.length })),
           ].filter((s) => s.total > 0)
         : [];
 
@@ -197,17 +224,17 @@ export default function MenuBuild() {
                         </Secao>
                     )}
 
-                    {filtrado.produtos.length > 0 && (
-                        <Secao id="cardapio" titulo="Cardápio">
+                    {filtrado.secoesProdutos.map((secao) => (
+                        <Secao key={secao.id} id={secao.id} titulo={secao.titulo}>
                             <ul className={`${CONTEUDO} grid gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3`}>
-                                {filtrado.produtos.map((item) => (
+                                {secao.produtos.map((item) => (
                                     <li key={item.id}>
                                         <LinhaProduto item={item} />
                                     </li>
                                 ))}
                             </ul>
                         </Secao>
-                    )}
+                    ))}
                 </div>
             )}
         </div>

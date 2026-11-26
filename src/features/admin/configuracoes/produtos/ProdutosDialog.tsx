@@ -34,6 +34,7 @@ import type {
     ProdutoInput,
     ProdutoStatus,
 } from "@/src/services/produtos";
+import { listarCategorias, type Categoria } from "@/src/services/categorias";
 import { listarTamanhos, type Tamanho } from "@/src/services/tamanhos";
 
 import AdicionaisProduto, {
@@ -106,6 +107,8 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
 
     const [nome, setNome] = useState(produto?.name ?? "");
     const [descricao, setDescricao] = useState(produto?.description ?? "");
+    // "" = sem categoria (o select do MUI não aceita null).
+    const [categoriaId, setCategoriaId] = useState<number | "">(produto?.categoryId ?? "");
     const [ingredientIds, setIngredientIds] = useState<number[]>(
         () => produto?.ingredientes.map((i) => i.ingredientId) ?? []
     );
@@ -132,6 +135,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
         Ingrediente[]
     >([]);
     const [catalogoTamanhos, setCatalogoTamanhos] = useState<Tamanho[]>([]);
+    const [categorias, setCategorias] = useState<Categoria[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [erroCatalogo, setErroCatalogo] = useState<string | null>(null);
 
@@ -146,11 +150,12 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
     useEffect(() => {
         let cancelado = false;
 
-        Promise.all([listarIngredientes(), listarTamanhos()])
-            .then(([ingredientes, tamanhos]) => {
+        Promise.all([listarIngredientes(), listarTamanhos(), listarCategorias().catch(() => [])])
+            .then(([ingredientes, tamanhos, listaCategorias]) => {
                 if (!cancelado) {
                     setCatalogoIngredientes(ingredientes);
                     setCatalogoTamanhos(tamanhos);
+                    setCategorias(listaCategorias);
                 }
             })
             .catch((erro) => {
@@ -244,6 +249,7 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
             name: nome,
             description: descricao,
             status: produto?.status ?? "ACTIVE",
+            categoryId: categoriaId === "" ? null : categoriaId,
             ingredientIds,
             sizes: sizes.map((s) => ({
                 sizeId: s.sizeId as number,
@@ -349,6 +355,29 @@ function ProdutosForm({ produto, onClose, onSave }: ProdutosFormProps) {
                                 multiline
                                 minRows={3}
                             />
+
+                            <TextField
+                                select
+                                label="Categoria"
+                                value={categoriaId}
+                                onChange={(e) => setCategoriaId(e.target.value === "" ? "" : Number(e.target.value))}
+                                fullWidth
+                                disabled={carregando}
+                                helperText={
+                                    !carregando && categorias.length === 0
+                                        ? "Nenhuma categoria cadastrada. Crie em Configurações > Categorias."
+                                        : "Seção do cardápio em que o produto aparece."
+                                }
+                            >
+                                <MenuItem value="">
+                                    <em>Sem categoria</em>
+                                </MenuItem>
+                                {categorias.map((c) => (
+                                    <MenuItem key={c.id} value={c.id}>
+                                        {c.name}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
                         </div>
                     </div>
 
