@@ -4,6 +4,7 @@ import { Alert, CircularProgress } from "@mui/material";
 import type { ItemCarrinho } from "@/src/lib/carrinho";
 import { formatCurrency } from "@/src/lib/format";
 import type { CotacaoPedido } from "@/src/services/cotacao";
+import { formatarKm } from "@/src/services/entrega";
 
 interface ResumoCheckoutProps {
     itens: ItemCarrinho[];
@@ -12,6 +13,8 @@ interface ResumoCheckoutProps {
     erroCotacao: string | null;
     erro: string | null;
     pontos: number;
+    /** Delivery ainda sem endereço: a taxa só aparece depois dele. */
+    taxaPendente: boolean;
     /** Cliente logado: pode usar e ganhar pontos. */
     cliente: boolean;
     enviando: boolean;
@@ -25,6 +28,7 @@ export default function ResumoCheckout({
     erroCotacao,
     erro,
     pontos,
+    taxaPendente,
     cliente,
     enviando,
     onTentarDeNovo,
@@ -59,11 +63,28 @@ export default function ResumoCheckout({
                         <dd>{formatCurrency(cotacao.subtotal)}</dd>
                     </div>
 
-                    {cotacao.taxaEntrega > 0 && (
-                        <div className="flex justify-between">
+                    {taxaPendente ? (
+                        <div className="flex justify-between gap-3 text-tinta-suave">
                             <dt>Taxa de entrega</dt>
-                            <dd>{formatCurrency(cotacao.taxaEntrega)}</dd>
+                            <dd className="text-right text-sm">informe o endereço</dd>
                         </div>
+                    ) : (
+                        (cotacao.taxaEntrega > 0 || cotacao.distanciaKm !== null) && (
+                            <div className="flex justify-between gap-3">
+                                <dt>
+                                    Taxa de entrega
+                                    {cotacao.distanciaKm !== null && (
+                                        <span className="text-sm text-tinta-suave">
+                                            {" "}
+                                            ({formatarKm(cotacao.distanciaKm)})
+                                        </span>
+                                    )}
+                                </dt>
+                                <dd className="shrink-0">
+                                    {cotacao.taxaEntrega > 0 ? formatCurrency(cotacao.taxaEntrega) : "Grátis"}
+                                </dd>
+                            </div>
+                        )
                     )}
 
                     {cotacao.desconto > 0 && (

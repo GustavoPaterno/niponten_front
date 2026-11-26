@@ -10,6 +10,8 @@ import type { Me } from "@/src/lib/auth";
 import { paraPedido, type ItemCarrinho } from "@/src/lib/carrinho";
 import { unwrap, unwrapTodas } from "@/src/lib/http";
 import { guardarPedidoLocal, lerPedidosLocais } from "@/src/lib/pedidosLocais";
+import type { EntregaCotacao } from "@/src/services/cotacao";
+import { localidade } from "@/src/services/entrega";
 import { opcaoDePagamento, type FormaEscolhida, type PedidoAPagar } from "@/src/services/pagamento";
 
 /** Finalização do pedido pelo cliente e a lista "Meus pedidos". */
@@ -28,6 +30,13 @@ export interface EnderecoInput {
     numero: string;
     complemento: string;
     referencia: string;
+    /**
+     * Vêm da consulta do CEP, só para mostrar: o backend completa bairro, cidade e UF pelo CEP
+     * e não os aceita no corpo.
+     */
+    bairro: string;
+    cidade: string;
+    uf: string;
 }
 
 export interface EnderecoSalvo {
@@ -49,6 +58,45 @@ function complementoComReferencia(e: EnderecoInput): string | undefined {
     return partes.length ? partes.join(", ") : undefined;
 }
 
+/** CEP com 8 dígitos, rua e número: dá para localizar e calcular a taxa. */
+export function enderecoCompleto(e: EnderecoInput): boolean {
+    return e.cep.replace(/\D/g, "").length === 8 && e.rua.trim() !== "" && e.numero.trim() !== "";
+}
+
+/**
+ * Entrega para a cotação. O endereço digitado só entra quando completo; o complemento não muda a
+ * localização e fica de fora, para não recotar (e geolocalizar de novo) a cada letra.
+ */
+export function entregaParaCotacao(
+    tipo: TipoEntregaCliente | null,
+    opcoes: { enderecoId: number | null; endereco: EnderecoInput | null }
+): EntregaCotacao | null {
+    if (!tipo) {
+        return null;
+    }
+
+    if (tipo !== "DELIVERY") {
+        return { tipo };
+    }
+
+    if (opcoes.enderecoId) {
+        return { tipo, addressId: opcoes.enderecoId };
+    }
+
+    if (opcoes.endereco && enderecoCompleto(opcoes.endereco)) {
+        return {
+            tipo,
+            address: {
+                cep: opcoes.endereco.cep.replace(/\D/g, ""),
+                streetAddress: opcoes.endereco.rua.trim(),
+                number: opcoes.endereco.numero.trim(),
+            },
+        };
+    }
+
+    return { tipo };
+}
+
 function paraEnderecoRequest(e: EnderecoInput) {
     return {
         cep: e.cep.replace(/\D/g, ""),
@@ -64,7 +112,13 @@ export async function listarEnderecos(userId: number): Promise<EnderecoSalvo[]> 
     return (lista ?? []).map((e) => ({
         id: e.id as number,
         resumo: [e.streetAddress, e.number].filter(Boolean).join(", "),
-        detalhe: [e.complement, e.cep ? `CEP ${e.cep}` : ""].filter(Boolean).join(", "),
+        detalhe: [
+            e.complement,
+            localidade({ bairro: e.neighborhood, cidade: e.city, uf: e.state }),
+            e.cep ? `CEP ${e.cep}` : "",
+        ]
+            .filter(Boolean)
+            .join(", "),
     }));
 }
 

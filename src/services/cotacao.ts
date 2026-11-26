@@ -1,4 +1,4 @@
-import type { OrderQuoteResponse } from "@joao.sumi/nippon-ten";
+import type { FulfillmentType, OrderAddressRequest, OrderQuoteResponse } from "@joao.sumi/nippon-ten";
 
 import { api } from "@/src/lib/api";
 import { paraPedido, type ItemCarrinho } from "@/src/lib/carrinho";
@@ -122,18 +122,42 @@ export interface CotacaoPedido {
     /** Parte do subtotal que aceita desconto com pontos. */
     subtotalElegivel: number;
     taxaEntrega: number;
+    /** Distância da loja até o endereço, quando a taxa foi calculada. */
+    distanciaKm: number | null;
     desconto: number;
     total: number;
     /** Pontos que este pedido rende (valem para as próximas compras). */
     pontosAGanhar: number;
 }
 
-/** Usar pontos (`pontos` > 0) exige cliente logado. Lança ApiError se algo no carrinho for recusado. */
-export async function cotarPedido(itens: ItemCarrinho[], pontos: number): Promise<CotacaoPedido> {
+/**
+ * Como o pedido será recebido, para a cotação incluir a taxa de entrega. Só DELIVERY com
+ * endereço (salvo, do cliente logado, ou digitado) tem taxa; sem endereço ela fica 0.
+ */
+export interface EntregaCotacao {
+    tipo: FulfillmentType;
+    addressId?: number;
+    address?: OrderAddressRequest;
+}
+
+/**
+ * Usar pontos (`pontos` > 0) exige cliente logado. Lança ApiError se algo no carrinho for recusado
+ * ou se não der para entregar no endereço (fora do raio, endereço não localizado...).
+ */
+export async function cotarPedido(
+    itens: ItemCarrinho[],
+    pontos: number,
+    entrega?: EntregaCotacao | null
+): Promise<CotacaoPedido> {
+    const delivery = entrega?.tipo === "DELIVERY";
     const resposta = await unwrap(
         api.order.ordersQuotePost({
             items: itens.map(paraPedido),
             pointsToRedeem: pontos > 0 ? pontos : undefined,
+            fulfillmentType: entrega?.tipo,
+            // O backend recusa endereço fora do delivery.
+            addressId: delivery ? entrega.addressId : undefined,
+            address: delivery ? entrega.address : undefined,
         })
     );
 
@@ -142,6 +166,7 @@ export async function cotarPedido(itens: ItemCarrinho[], pontos: number): Promis
         subtotal: resposta.subtotal ?? 0,
         subtotalElegivel: resposta.pointsEligibleSubtotal ?? 0,
         taxaEntrega: resposta.deliveryFee ?? 0,
+        distanciaKm: resposta.deliveryDistanceKm ?? null,
         desconto: resposta.discount ?? 0,
         total: resposta.total ?? 0,
         pontosAGanhar: resposta.pointsToEarn ?? 0,

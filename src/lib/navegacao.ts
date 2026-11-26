@@ -71,6 +71,16 @@ export const MODULOS: ModuloNavegacao[] = [
         ],
     },
     {
+        titulo: "Entrega",
+        itens: [
+            {
+                label: "Taxa de entrega",
+                href: "/admin/configuracoes/entrega",
+                permissao: "MANAGE_DELIVERY",
+            },
+        ],
+    },
+    {
         titulo: "Equipe",
         itens: [
             {

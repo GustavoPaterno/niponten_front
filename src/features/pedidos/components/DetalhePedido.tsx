@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { CircularProgress, Drawer, TextField, useMediaQuery } from "@mui/material";
 import { Close } from "@mui/icons-material";
-import type { OrderResponse } from "@joao.sumi/nippon-ten";
+import type { Address, OrderResponse } from "@joao.sumi/nippon-ten";
 
 import { useToast } from "@/src/components/feedback/ToastProvider";
 import { formatCurrency } from "@/src/lib/format";
 import { mensagemDeErro } from "@/src/lib/http";
+import { formatarKm, localidade } from "@/src/services/entrega";
 import {
     NOME_PAGAMENTO,
     NOME_STATUS,
@@ -33,6 +34,19 @@ const COR_STATUS: Record<StatusPedido, string> = {
     COMPLETED: "bg-green-100 text-green-700",
     CANCELLED: "bg-black/10 text-tinta-suave",
 };
+
+/** "Rua A, 10, Apto 2 · Centro, São Carlos/SP, CEP 13560000" */
+function enderecoPorExtenso(endereco: Address): string {
+    const rua = [endereco.streetAddress, endereco.number, endereco.complement].filter(Boolean).join(", ");
+    const lugar = [
+        localidade({ bairro: endereco.neighborhood, cidade: endereco.city, uf: endereco.state }),
+        endereco.cep ? `CEP ${endereco.cep}` : "",
+    ]
+        .filter(Boolean)
+        .join(", ");
+
+    return [rua, lugar].filter(Boolean).join(" · ");
+}
 
 export function SeloStatus({ status }: { status: StatusPedido }) {
     return (
@@ -201,12 +215,11 @@ function Conteudo({
                                 {NOME_TIPO[tipo]}
                             </p>
                             {pedido.address && (
+                                <p className="text-sm text-tinta-suave">{enderecoPorExtenso(pedido.address)}</p>
+                            )}
+                            {pedido.deliveryDistanceKm != null && (
                                 <p className="text-sm text-tinta-suave">
-                                    {[pedido.address.streetAddress, pedido.address.number]
-                                        .filter(Boolean)
-                                        .join(", ")}
-                                    {pedido.address.complement && `, ${pedido.address.complement}`}
-                                    {pedido.address.cep && `, CEP ${pedido.address.cep}`}
+                                    A {formatarKm(pedido.deliveryDistanceKm)} da loja (linha reta)
                                 </p>
                             )}
                         </Bloco>
