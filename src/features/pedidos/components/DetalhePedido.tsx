@@ -151,6 +151,7 @@ function Conteudo({
     };
 
     const status = pedido?.status ?? "PENDING";
+    const online = pedido?.paymentChannel === "ONLINE";
     const tipo = pedido?.fulfillmentType ?? "PICKUP";
     const proxima = pedido ? proximaEtapa(status, tipo) : null;
     const ativo = status !== "COMPLETED" && status !== "CANCELLED";
@@ -293,15 +294,21 @@ function Conteudo({
                             <div className="mt-2 flex flex-wrap items-center gap-2">
                                 <span className="text-sm">
                                     {pedido.paymentMethod ? NOME_PAGAMENTO[pedido.paymentMethod] : "—"}
+                                    {online && " online"}
                                 </span>
                                 <span
                                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                                         pedido.paid ? "bg-green-100 text-green-700" : "bg-amber-50 text-amber-800"
                                     }`}
                                 >
-                                    {pedido.paid ? `Pago ${pedido.paidAt ? hora(pedido.paidAt) : ""}` : "A receber"}
+                                    {pedido.paid
+                                        ? `Pago ${pedido.paidAt ? hora(pedido.paidAt) : ""}`
+                                        : online
+                                          ? "Aguardando o cliente pagar"
+                                          : "A receber"}
                                 </span>
-                                {!somenteLeitura && !pedido.paid && status !== "CANCELLED" && (
+                                {/* Pago online, só o Mercado Pago confirma: o backend recusa marcar à mão. */}
+                                {!somenteLeitura && !online && !pedido.paid && status !== "CANCELLED" && (
                                     <button
                                         type="button"
                                         disabled={ocupado}
