@@ -4,7 +4,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CircularProgress, Collapse } from "@mui/material";
-import { CheckCircle, ExpandMore, PaymentsOutlined, ReceiptLongOutlined } from "@mui/icons-material";
+import {
+    CancelOutlined,
+    CheckCircle,
+    DeliveryDiningOutlined,
+    ExpandMore,
+    HourglassTopOutlined,
+    LocalFireDepartmentOutlined,
+    PaymentsOutlined,
+    ReceiptLongOutlined,
+    TaskAltOutlined,
+} from "@mui/icons-material";
+import type { SvgIconComponent } from "@mui/icons-material";
 import type { OrderResponse, Status3 } from "@joao.sumi/nippon-ten";
 
 import { useSessao } from "@/src/components/auth/SessaoProvider";
@@ -79,6 +90,31 @@ function frase(p: MeuPedido): string {
             return "Pedido concluído.";
         case "CANCELLED":
             return "Pedido cancelado.";
+    }
+}
+
+/**
+ * Selo do status no topo do card: cor e ícone próprios, para o cliente achar o pedido pelo estado
+ * sem ler a frase. "Pronto" é o único cheio: é quando o cliente precisa agir (retirar ou receber).
+ */
+function selo(p: MeuPedido): { label: string; classe: string; Icone: SvgIconComponent } {
+    const rotuloDaEtapa = etapas(p.tipo, false).find((e) => e.status === p.status)?.label ?? "";
+
+    switch (p.status) {
+        case "AWAITING_PAYMENT":
+            return { label: "Aguardando pagamento", classe: "bg-amber-100 text-amber-900", Icone: HourglassTopOutlined };
+        case "PENDING":
+            return { label: "Recebido", classe: "bg-sky-100 text-sky-900", Icone: ReceiptLongOutlined };
+        case "IN_PREPARATION":
+            return { label: "Em preparo", classe: "bg-orange-100 text-orange-900", Icone: LocalFireDepartmentOutlined };
+        case "READY":
+            return { label: rotuloDaEtapa, classe: "bg-green-700 text-white", Icone: TaskAltOutlined };
+        case "OUT_FOR_DELIVERY":
+            return { label: "A caminho", classe: "bg-indigo-100 text-indigo-900", Icone: DeliveryDiningOutlined };
+        case "COMPLETED":
+            return { label: rotuloDaEtapa, classe: "bg-green-100 text-green-800", Icone: CheckCircle };
+        case "CANCELLED":
+            return { label: "Cancelado", classe: "bg-erro-fundo text-erro", Icone: CancelOutlined };
     }
 }
 
@@ -243,7 +279,7 @@ export default function MeusPedidos() {
                 {ativos.length > 0 && (
                     <section className="mt-6 flex flex-col gap-3">
                         <h2 className="font-display text-lg font-bold">
-                            Em andamento <span className="font-normal text-tinta-suave/70">({ativos.length})</span>
+                            Em andamento <span className="font-normal text-tinta-suave">({ativos.length})</span>
                         </h2>
                         <div className={GRADE}>
                             {ativos.map((p) => (
@@ -262,7 +298,7 @@ export default function MeusPedidos() {
                 {finalizados.length > 0 && (
                     <section className="mt-8 flex flex-col gap-3">
                         <h2 className="font-display text-lg font-bold">
-                            Finalizados <span className="font-normal text-tinta-suave/70">({finalizados.length})</span>
+                            Finalizados <span className="font-normal text-tinta-suave">({finalizados.length})</span>
                         </h2>
                         <div className={GRADE}>
                             {finalizados.map((p) => (
@@ -304,6 +340,7 @@ function CartaoPedido({
     // O cliente cancela até o pedido começar a ser preparado.
     const podeCancelar = pedido.status === "AWAITING_PAYMENT" || pedido.status === "PENDING";
     const pagamento = resumoPagamento(pedido);
+    const status = selo(pedido);
 
     useEffect(() => {
         if (destacado) {
@@ -363,17 +400,25 @@ function CartaoPedido({
                     </div>
                 </div>
 
-                <p className={`text-sm font-medium ${cancelado ? "text-tinta-suave" : ativo ? "text-marca" : "text-green-700"}`}>
-                    {frase(pedido)}
-                </p>
+                <div className="flex flex-col gap-1">
+                    <span
+                        className={`flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${status.classe}`}
+                    >
+                        <status.Icone sx={{ fontSize: 18 }} />
+                        {status.label}
+                    </span>
+                    {/* Finalizado: o selo já diz tudo. */}
+                    {ativo && <p className="text-sm text-tinta">{frase(pedido)}</p>}
+                </div>
+                {/* Pagamento em texto, não pílula: o único destaque do card é o selo do status. */}
                 {pagamento &&
                     (pedido.pago && !cancelado ? (
-                        <span className="-mt-1 flex w-fit items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
+                        <p className="-mt-1 flex items-center gap-1 text-xs font-semibold text-green-800">
                             <CheckCircle sx={{ fontSize: 14 }} />
                             {pagamento}
-                        </span>
+                        </p>
                     ) : (
-                        <p className="-mt-1.5 text-xs text-tinta-suave">{pagamento}</p>
+                        <p className="-mt-1 text-xs text-tinta-suave">{pagamento}</p>
                     ))}
 
                 {/* Barra de etapas: só nos pedidos em andamento. */}
@@ -391,7 +436,11 @@ function CartaoPedido({
                                     />
                                     <span
                                         className={`truncate text-[11px] leading-tight sm:text-xs ${
-                                            feita ? "font-semibold text-tinta" : "text-tinta-suave/70"
+                                            i === atual
+                                                ? "font-bold text-marca-escura"
+                                                : feita
+                                                  ? "font-semibold text-tinta"
+                                                  : "text-tinta-suave"
                                         }`}
                                         title={etapa.label}
                                     >
@@ -403,18 +452,7 @@ function CartaoPedido({
                     </ol>
                 )}
 
-                {!ativo && (
-                    <span
-                        className={`flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                            cancelado ? "bg-chapa text-tinta-suave" : "bg-green-100 text-green-700"
-                        }`}
-                    >
-                        {!cancelado && <CheckCircle sx={{ fontSize: 14 }} />}
-                        {cancelado ? "Cancelado" : "Concluído"}
-                    </span>
-                )}
-
-                <span className="flex items-center justify-center gap-1 text-xs font-medium text-tinta-suave/70">
+                <span className="flex items-center justify-center gap-1 text-xs font-medium text-tinta-suave">
                     {aberto ? "Ocultar itens" : "Ver itens"}
                     <ExpandMore sx={{ fontSize: 18 }} className={`transition-transform ${aberto ? "rotate-180" : ""}`} />
                 </span>
