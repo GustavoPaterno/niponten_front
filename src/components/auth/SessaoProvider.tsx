@@ -10,6 +10,13 @@ import {
 
 import { buscarMe, sair as sairDaApi, type Me } from "@/src/lib/auth";
 import { limparCarrinho } from "@/src/lib/carrinho";
+import { ApiError } from "@/src/lib/http";
+import { ouvirTrocaDeSessao } from "@/src/lib/sessaoEntreAbas";
+
+// Mesmo usuário com os mesmos dados: mantém o objeto, para quem depende de `me` não recarregar.
+function mesmoUsuario(a: Me | null, b: Me | null): boolean {
+    return JSON.stringify(a) === JSON.stringify(b);
+}
 
 interface SessaoContextType {
     /** Usuário logado; `null` quando não há sessão. */
@@ -32,7 +39,11 @@ export function useSessao() {
     return context;
 }
 
-/** Busca o usuário logado (GET /auth/me) uma vez e o compartilha com o header, a sidebar e as páginas. */
+/**
+ * Busca o usuário logado (GET /auth/me) e o compartilha com o header, a sidebar e as páginas.
+ * Confere de novo quando outra aba entra ou sai da conta e quando a aba volta a ficar visível,
+ * porque o cookie do login é um só para o navegador todo (ver src/lib/sessaoEntreAbas.ts).
+ */
 export default function SessaoProvider({
     children,
 }: {
@@ -83,6 +94,33 @@ export default function SessaoProvider({
 
         return () => {
             cancelado = true;
+        };
+    }, []);
+
+    // Conferência depois da carga inicial. Só 401/403 tiram a sessão: uma falha de rede passageira
+    // não pode deslogar a aba.
+    useEffect(() => {
+        const conferir = () => {
+            buscarMe()
+                .then((usuario) => setMe((atual) => (mesmoUsuario(atual, usuario) ? atual : usuario)))
+                .catch((e) => {
+                    if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+                        setMe(null);
+                    }
+                });
+        };
+        const aoVoltar = () => {
+            if (document.visibilityState === "visible") {
+                conferir();
+            }
+        };
+
+        const pararDeOuvir = ouvirTrocaDeSessao(conferir);
+        document.addEventListener("visibilitychange", aoVoltar);
+
+        return () => {
+            pararDeOuvir();
+            document.removeEventListener("visibilitychange", aoVoltar);
         };
     }, []);
 

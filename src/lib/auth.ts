@@ -1,5 +1,6 @@
 import { ApiError, criarApiError } from "@/src/lib/http";
 import { caminhoDeVolta, destinoAposLogin } from "@/src/lib/navegacao";
+import { avisarTrocaDeSessao } from "@/src/lib/sessaoEntreAbas";
 
 /**
  * Autenticação.
@@ -41,6 +42,8 @@ export async function login(input: LoginInput): Promise<LoginResponse> {
     }
 
     if (response.ok) {
+        // O cookie do token é do navegador todo: as outras abas passam a ser desta conta.
+        avisarTrocaDeSessao();
         return (await response.json()) as LoginResponse;
     }
 
@@ -74,6 +77,8 @@ export async function sair(): Promise<void> {
     } catch {
         // Sem conexão: não há o que fazer além de seguir para a tela de login.
     }
+
+    avisarTrocaDeSessao();
 }
 
 export type UserType = "CLIENT" | "INTERNAL";
